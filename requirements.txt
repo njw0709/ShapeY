@@ -1,0 +1,9 @@
+torch == 1.5.0
+torchvision == 0.6.0
+numpy==1.18.4
+kaleido==0.0.1
+tqdm==4.48.0
+cupy-cuda102
+matplotlib==3.3.1
+gdown
+h5py==2.10.0
