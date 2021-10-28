@@ -47,8 +47,8 @@ if __name__ == '__main__':
                 print('Saved resnet feature outputs!')
             else:
                 #### put your feature extraction code here!! #####
+                ## TODO: implement a version where you extract and save batches, not the whole thing at once 
                 original_stored_imgname, original_stored_feat = your_feature_output_code(datadir)
-                # TODO: check the order of the original_stored_imgname with a reference!
                 imgname_order = np.array(original_stored_imgname)
                 imgname_order = imgname_order.astype('U')
                 reference_imgname = np.load(os.path.join(PROJECT_DIR, 'step1_save_feature', 'imgname_ref.npy'))

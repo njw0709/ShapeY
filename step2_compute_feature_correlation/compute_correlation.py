@@ -16,6 +16,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output hdf file name')
     parser.add_argument('--feature_name', type=str, default='ResNet50')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate', 'your_feature.h5'))
+    parser.add_argument('--batch_size', type=int, default=20000)
+    parser.add_argument('--num_workers', type=int, default=8)
 
     args = parser.parse_args()
 
@@ -23,7 +25,7 @@ if __name__ == '__main__':
 
     hdfname = args.input_dir
 
-    first_time = os.path.exists(args.output_dir)
+    first_time = os.path.exists(args.input_dir)
     feature_group_key = '/feature_output'
     try:
         hdfstore = h5py.File(hdfname, 'r+')
@@ -51,7 +53,7 @@ if __name__ == '__main__':
             hdfstore.create_dataset(corrval_key_original, shape=(len(original_dataset), len(original_dataset)))
         except RuntimeError:
             print(corrval_key_original + " already exists")
-        compute_correlation_and_save(permutation_dataset, hdfstore, corrval_key_original)
+        compute_correlation_and_save(permutation_dataset, hdfstore, corrval_key_original, batch_size=args.batch_size, num_workers=args.num_workers)
         
     finally:
         hdfstore.close()
