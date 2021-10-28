@@ -44,9 +44,9 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
     return original_stored_imgname, original_stored_feat
 
 
-def compute_correlation_and_save(permutation_dataset: OriginalandPostProcessedPairsDataset, hdfstore: File, corrval_key: str) -> None:
+def compute_correlation_and_save(permutation_dataset: OriginalandPostProcessedPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8) -> None:
     data_loader = torch.utils.data.DataLoader(permutation_dataset,
-                                              batch_size=20000,
+                                              batch_size=batch_size,
                                               shuffle=False,
                                               num_workers=8,
                                               pin_memory=True)
