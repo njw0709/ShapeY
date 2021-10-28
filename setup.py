@@ -7,7 +7,7 @@ with open('README.md') as file:
   
 # specify requirements of your package here
 REQUIREMENTS = [
-    'torch == 1.5.0',
+    'torch == 1.7.1',
     'torchvision == 0.6.0',
     'numpy==1.18.4',
     'kaleido==0.0.1',
@@ -27,7 +27,7 @@ CLASSIFIERS = [
   
 # calling the setup function 
 setuptools.setup(name='ShapeY',
-                version='0.0.1',
+                version='0.0.2',
                 description='Benchmark that tests shape recognition',
                 long_description=long_description,
                 url='https://github.com/njw0709/ShapeY',

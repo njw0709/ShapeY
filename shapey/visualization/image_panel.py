@@ -1,4 +1,3 @@
-from random import sample
 from PIL import Image
 import sys
 import os

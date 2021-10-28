@@ -1,19 +1,9 @@
-from numpy.core.defchararray import count
-import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from itertools import combinations
-import re
 import cupy as cp
 from cupyx.scipy.linalg import tri
 import functools
-
-import sys
-import os
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-sys.path.append('../../')
-
 from shapey.utils.customdataset import ImageFolderWithPaths, OriginalandPostProcessedPairsDataset
 from shapey.utils.modelutils import GetModelIntermediateLayer
 from shapey.utils.customfunc import pearsonr_batch

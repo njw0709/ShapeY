@@ -1,8 +1,5 @@
-from logging import error
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from IPython.core.debugger import set_trace
 
 def make_corr_fall_off_single_sample(row_info, excaxis):
     figure, ax = plt.subplots(figsize=(1.6*5,1.6*4))

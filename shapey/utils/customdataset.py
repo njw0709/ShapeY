@@ -1,6 +1,6 @@
 import torchvision.datasets as datasets
 from torch.utils.data import Dataset
-from itertools import combinations, product, islice
+from itertools import combinations
 import math
 
 class CombinationDataset(Dataset):
