@@ -1,6 +1,6 @@
 from shapey.dataprocess.raw_data import extract_features_resnet50
 from shapey.utils.macroutils import check_image_order
-from .your_feature_extraction_code import your_feature_output_code
+from your_feature_extraction_code import your_feature_output_code
 
 import argparse
 import os
