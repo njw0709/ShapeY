@@ -13,7 +13,7 @@ subprocess.run([python_version,
                 "--output_dir",
                 os.path.join("data", "intermediate"),
                 "--run_example", 
-                "True",
+                "0",
                 "--name",
                 feature_extraction_system_name
                 ])
@@ -42,7 +42,7 @@ subprocess.run([python_version,
                 "--output_dir",
                 os.path.join("figures", feature_extraction_system_name),
                 "--within_category_error",
-                "False"
+                "0"
                 ])
 
 subprocess.run([python_version,
@@ -52,6 +52,6 @@ subprocess.run([python_version,
                 "--output_dir",
                 os.path.join("figures", feature_extraction_system_name),
                 "--within_category_error",
-                "True"
+                "1"
                 ])
 
