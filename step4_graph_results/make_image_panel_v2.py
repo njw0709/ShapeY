@@ -22,7 +22,7 @@ if __name__ == '__main__':
     print(args)
 
     input_name = args.input_dir
-    output_dir = os.path.join(args.output_dir + 'image_panels') 
+    output_dir = os.path.join(args.output_dir, 'image_panels') 
     os.makedirs(output_dir, exist_ok=True)
 
     image_panel_data_processor = DataPrepImagePanels(args.img_dir, args.input_dir)
