@@ -21,7 +21,7 @@ if __name__ == '__main__':
     print(args)
 
     input_name = args.input_dir
-    output_dir = args.output_dir + 'exclusion_distance'
+    output_dir = os.path.join(args.output_dir, 'exclusion_distance')
     os.makedirs(output_dir, exist_ok=True)
     common_fig_name = 'top1_error_'
     if args.within_category_error:
