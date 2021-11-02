@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 assert check_image_order(original_stored_imgname, reference_imgname)
                 origianl_imgnames = hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
                 original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
-                print('Saved resnet feature outputs!')
+                print('Saved {} feature outputs!'.format(args.name))
         else:
             print('Retrieving saved features...')
             original_features = hdfstore[feature_output_key]
