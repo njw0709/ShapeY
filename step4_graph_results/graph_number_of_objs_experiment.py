@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output file path')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'your_feature_objnum_exp.h5'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(PROJECT_DIR, 'figures', 'your_feature_figs', 'numexp'))
-    parser.add_argument('--within_category_error', type=bool, default=False)
+    parser.add_argument('--within_category_error', type=int, default=0)
 
     args = parser.parse_args()
 

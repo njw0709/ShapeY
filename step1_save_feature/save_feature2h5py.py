@@ -15,8 +15,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output hdf file name')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'ShapeY200'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate'))
-    parser.add_argument('--recompute_feat', type=bool, default=True)
-    parser.add_argument('--run_example', type=bool, default=True)
+    parser.add_argument('--recompute_feat', type=int, default=1)
+    parser.add_argument('--run_example', type=int, default=1)
     parser.add_argument('--name', type=str, default='ResNet50')
 
     args = parser.parse_args()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 assert check_image_order(original_stored_imgname, reference_imgname)
                 origianl_imgnames = hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
                 original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
-                print('Saved resnet feature outputs!')
+                print('Saved {} feature outputs!'.format(args.name))
         else:
             print('Retrieving saved features...')
             original_features = hdfstore[feature_output_key]
