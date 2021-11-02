@@ -204,8 +204,8 @@ class ImgCorrelationDataProcessorV2:
         max_idxs = []
         for xdist in range(0, 11):
             res = self.excluded_to_zero(cval_sameobj, ax, xdist, pure=pure)
-            max_cvals.append(cp.nanmax(res, axis=1))
-            max_idxs.append(cp.nanargmax(res, axis=1))
+            max_cvals.append(cp.nanmax(res, axis=1).get())
+            max_idxs.append(cp.nanargmax(res, axis=1).get())
         return np.array(max_cvals, dtype=float).T, np.array(max_idxs, dtype=np.int64).T
     
     def get_objrank(self, cval_arr_sameobj: np.ndarray, top1_cval_per_obj: np.ndarray) -> np.ndarray:
