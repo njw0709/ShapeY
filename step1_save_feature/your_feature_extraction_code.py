@@ -5,7 +5,11 @@ from shapey.utils.modelutils import GetModelIntermediateLayer
 import torchvision.transforms as transforms
 import torch
 from shapey.utils.customdataset import ImageFolderWithPaths
-import tqdm
+from tqdm import tqdm
+import os
+
+PROJECT_DIR = os.path.join(os.path.dirname(__file__), '..')
+
 
 def your_feature_output_code(datadir: str) -> Tuple[list, list]:
     ## Takes in the dataset directory as string, and outputs a list with all image names, and a list with all extracted features.
@@ -44,13 +48,16 @@ def extract_features_torch(datadir: str, model) -> Tuple[list, list]:
 def simclr_resnet(width: int):
     if width == 1:
         model = resnet50x1()
-        model.load_state_dict(torch.load('../simclr/resnet50x1.pth'))
+        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-1x.pth'), map_location='cpu')
+        model.load_state_dict(sd['state_dict'])
     elif width == 2:
         model = resnet50x2()
-        model.load_state_dict(torch.load('../simclr/resnet50x2.pth'))
+        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-2x.pth'), map_location='cpu')
+        model.load_state_dict(sd['state_dict'])
     elif width == 4:
         model = resnet50x4()
-        model.load_state_dict(torch.load('../simclr/resnet50x4.pth'))
+        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-4x.pth'), map_location='cpu')
+        model.load_state_dict(sd['state_dict'])
     else:
         raise ValueError("Invalid width")
     model_rep = GetModelIntermediateLayer(model, -1)
