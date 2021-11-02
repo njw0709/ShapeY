@@ -15,8 +15,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output hdf file name')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'ShapeY200'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate'))
-    parser.add_argument('--recompute_feat', type=bool, default=True)
-    parser.add_argument('--run_example', type=bool, default=True)
+    parser.add_argument('--recompute_feat', type=int, default=1)
+    parser.add_argument('--run_example', type=int, default=1)
     parser.add_argument('--name', type=str, default='ResNet50')
 
     args = parser.parse_args()
