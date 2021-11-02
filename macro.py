@@ -3,7 +3,7 @@ import os
 
 # You must implement 'step1_save_feature/your_feature_extraction_code.py' before you run this script.
 python_version = "python3.6"
-feature_extraction_system_name = 'ResNet50' #your architecture name
+feature_extraction_system_name = 'SimCLR_ResNet50_4x' #your architecture name
 
 # saves the embedding vectors of the images to .h5 file.
 subprocess.run([python_version, 
@@ -13,7 +13,7 @@ subprocess.run([python_version,
                 "--output_dir",
                 os.path.join("data", "intermediate"),
                 "--run_example", 
-                "True",
+                "False",
                 "--name",
                 feature_extraction_system_name
                 ])
