@@ -14,7 +14,7 @@ DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output hdf file name')
-    parser.add_argument('--feature_name', type=str, default='ResNet50')
+    parser.add_argument('--feature_name', type=str, default='ViT')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate', 'your_feature.h5'))
     parser.add_argument('--batch_size', type=int, default=20000)
     parser.add_argument('--num_workers', type=int, default=8)

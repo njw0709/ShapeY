@@ -1,6 +1,6 @@
 from shapey.dataprocess.raw_data import extract_features_resnet50
 from shapey.utils.macroutils import check_image_order
-from your_feature_extraction_code import simclr_resnet, extract_features_torch
+from your_feature_extraction_code import extract_features_torch_with_hooks, simclr_resnet, timm_get_model
 
 import argparse
 import os
@@ -18,6 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('--recompute_feat', type=int, default=1)
     parser.add_argument('--run_example', type=int, default=1)
     parser.add_argument('--name', type=str, default='ResNet50')
+    parser.add_argument('--feature_layer', type=str, default='avgpool')
+    parser.add_argument('--input_size', type=int, default=224)
 
     args = parser.parse_args()
 
@@ -48,8 +50,9 @@ if __name__ == '__main__':
             else:
                 #### put your feature extraction code here!! #####
                 ## TODO: implement a version where you extract and save batches, not the whole thing at once 
-                model = simclr_resnet(4)
-                original_stored_imgname, original_stored_feat = extract_features_torch(datadir, model)
+                model_name = args.name
+                model = timm_get_model(model_name)
+                original_stored_imgname, original_stored_feat = extract_features_torch_with_hooks(datadir, model, args.feature_layer, input_img_size=args.input_size)
                 imgname_order = np.array(original_stored_imgname)
                 imgname_order = imgname_order.astype('U')
                 reference_imgname = np.load(os.path.join(PROJECT_DIR, 'step1_save_feature', 'imgname_ref.npy'))

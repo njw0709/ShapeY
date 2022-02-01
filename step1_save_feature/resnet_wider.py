@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torchvision.models as models
+from torchsummary import summary
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
@@ -206,3 +208,11 @@ def resnet50x2(**kwargs):
 
 def resnet50x4(**kwargs):
     return ResNet(Bottleneck, [3, 4, 6, 3], width_mult=4)
+
+# if __name__ == '__main__':
+#     # print(list(model.children())[:-1])
+#     model = resnet50x1()
+#     summary(model.cuda(), (3, 224, 224))
+#     # print(list(model.children())[:-1])
+#     # resnet50 = models.resnet50()
+#     # print(list(resnet50.children())[:-1])
