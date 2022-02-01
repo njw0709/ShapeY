@@ -9,8 +9,8 @@ DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output file path')
-    parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate', 'vit_base_patch16_224_in21k.h5'))
-    parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'vit_base_patch16_224_in21k.h5'))
+    parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate', 'your_feature.h5'))
+    parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'your_feature.h5'))
 
 
     args = parser.parse_args()
