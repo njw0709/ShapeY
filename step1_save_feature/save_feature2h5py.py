@@ -15,7 +15,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output hdf file name')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'ShapeY200'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate'))
-    parser.add_argument('--recompute_feat', type=int, default=1)
+    parser.add_argument('--contrast_reversed', type=int, default=0)
+    parser.add_argument('--contrast_reversed_input_dir', type=str, default=os.path.join(DATA_DIR, 'ShapeY200CR'))
+    parser.add_argument('--recompute_feat', type=int, default=0)
     parser.add_argument('--run_example', type=int, default=1)
     parser.add_argument('--name', type=str, default='ResNet50')
     parser.add_argument('--feature_layer', type=str, default='avgpool')
@@ -25,22 +27,29 @@ if __name__ == '__main__':
 
     print(args)
 
-    datadir = args.input_dir
+    if args.contrast_reversed:
+        datadir = args.contrast_reversed_input_dir
+    else:
+        datadir = args.input_dir
     hdfname = os.path.join(args.output_dir, args.name+'.h5')
 
     first_time = os.path.exists(hdfname)
     feature_group_key = '/feature_output'
     try:
-        if args.recompute_feat:
+        if not args.contrast_reversed and (args.recompute_feat or first_time):
             hdfstore = h5py.File(hdfname, 'w')
             hdfstore.create_group(feature_group_key)
         else:
             hdfstore = h5py.File(hdfname, 'r+')
 
-        imgname_key = feature_group_key + '/imgname'
-        feature_output_key = feature_group_key + '/output'
+        if args.contrast_reversed:
+            imgname_key = feature_group_key + '/imgname_cr'
+            feature_output_key = feature_group_key + '/output_cr'
+        else:
+            imgname_key = feature_group_key + '/imgname'
+            feature_output_key = feature_group_key + '/output'
 
-        if args.recompute_feat or not first_time:
+        if args.recompute_feat or first_time:
             if args.run_example:
                 print('Extracting resnet feature outputs...')
                 original_stored_imgname, original_stored_feat = extract_features_resnet50(datadir)
@@ -63,5 +72,7 @@ if __name__ == '__main__':
         else:
             print('Retrieving saved features...')
             original_features = hdfstore[feature_output_key]
+            assert len(original_features) == 68200
+            print('Features already exist!')
     finally:
         hdfstore.close()

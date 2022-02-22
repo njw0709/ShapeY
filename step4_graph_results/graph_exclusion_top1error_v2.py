@@ -14,6 +14,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output file path')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'your_feature.h5'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(PROJECT_DIR, 'figures', 'your_feature_figs'))
+    parser.add_argument('--contrast_reversed', type=int, default=0)
+    parser.add_argument('--exclusion_mode', type=str, default='soft')
     parser.add_argument('--within_category_error', type=int, default=0)
 
     args = parser.parse_args()
@@ -26,6 +28,8 @@ if __name__ == '__main__':
     common_fig_name = 'top1_error_'
     if args.within_category_error:
         common_fig_name += 'category_'
+    if args.contrast_reversed:
+        common_fig_name += 'cr_{}_'.format(args.exclusion_mode)
     axes = make_axis_of_interest()
 
     ones = [idx for idx, e in enumerate(axes) if len(e)==1]
@@ -35,7 +39,10 @@ if __name__ == '__main__':
     with h5py.File(input_name, 'r') as hdfstore:
         imgnames = hdfstore['/feature_output/imgname'][:].astype('U')
         objnames = np.unique(np.array([c.split('-')[0] for c in imgnames]))
-        key_head = '/original'
+        if args.contrast_reversed:
+            key_head = key_head = '/contrast_reversed/{}'.format(args.exclusion_mode)
+        else:
+            key_head = '/original'
        
         res = [NNClassificationErrorV2.generate_top1_error_data(hdfstore, objnames, ax, key_head=key_head, within_category_error=args.within_category_error) for ax in axes]
         res = list(zip(*res)) #top1_error_per_obj, top1_error_mean, num_correct_allobj, total_count

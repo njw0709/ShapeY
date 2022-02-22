@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output file path')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'intermediate', 'your_feature.h5'))
     parser.add_argument('--output_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'your_feature.h5'))
+    parser.add_argument('--contrast_reversed', type=int, default=0)
 
 
     args = parser.parse_args()
@@ -25,4 +26,8 @@ if __name__ == '__main__':
     
     with h5py.File(output_name, 'a') as hdfstore:
         data_processor = ImgCorrelationDataProcessorV2(hdfstore)
-        data_processor.exclusion_distance_analysis(hdfstore)
+        if args.contrast_reversed:
+            data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.contrast_reversed, exclusion_mode='soft')
+            data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.contrast_reversed, exclusion_mode='hard')
+        else:
+            data_processor.exclusion_distance_analysis(hdfstore)

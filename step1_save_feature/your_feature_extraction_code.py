@@ -32,7 +32,7 @@ def extract_features_torch(datadir: str, model, input_img_size:int = 244) -> Tup
 
     data_loader = torch.utils.data.DataLoader(dataset,
                     batch_size=1, shuffle=False,
-                    num_workers=4, pin_memory=True)
+                    num_workers=0, pin_memory=True)
 
     # compute features
     original_stored_imgname = []
@@ -47,7 +47,7 @@ def extract_features_torch(datadir: str, model, input_img_size:int = 244) -> Tup
         original_stored_feat.append(output1_store)
     return original_stored_imgname, original_stored_feat
 
-def extract_features_torch_with_hooks(datadir: str, model, intermediate_layer_name: str, input_img_size: int = 244) -> Tuple[list, list]:
+def extract_features_torch_with_hooks(datadir: str, model, final_layer_name: str, input_img_size: int = 244) -> Tuple[list, list]:
     ## Takes in the dataset directory as string, and outputs a list with all image names, and a list with all extracted features.
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
@@ -60,15 +60,23 @@ def extract_features_torch_with_hooks(datadir: str, model, intermediate_layer_na
 
     data_loader = torch.utils.data.DataLoader(dataset,
                     batch_size=1, shuffle=False,
-                    num_workers=4, pin_memory=True)
+                    num_workers=0, pin_memory=True)
 
     features = {}
     def get_features(name):
         def hook(model, input, output):
-            features[name] = output.detach()
+            if type(input) == torch.Tensor:
+                features[name] = input.detach()
+            elif type(input) == tuple:
+                if len(input) == 1:
+                    features[name] = input[0].detach()
+                else:
+                    raise NotImplementedError('input is a tuple with size larger than one')
+            else:
+                raise NotImplementedError('input is not a tensor or a tuple of tensors')
         return hook
     
-    exec("model." + intermediate_layer_name + ".register_forward_hook(get_features('" + intermediate_layer_name + "'))")
+    exec("model." + final_layer_name + ".register_forward_hook(get_features('" + final_layer_name + "'))")
     
     # compute features
     original_stored_imgname = []
@@ -76,12 +84,12 @@ def extract_features_torch_with_hooks(datadir: str, model, intermediate_layer_na
     for s in tqdm(data_loader):
         img1, _, fname1 = s
         fname1 = fname1[0].split('/')[-1]
-        output = model(img1.cuda())
-        prelogit = features[intermediate_layer_name]
-        output1 = torch.flatten(prelogit)
-        output1_store = output1.cpu().data.numpy()
+        _ = model(img1.cuda())
+        prelogit = features[final_layer_name]
+        output = torch.flatten(prelogit)
+        output = output.cpu().data.numpy()
         original_stored_imgname.append(fname1)
-        original_stored_feat.append(output1_store)
+        original_stored_feat.append(output)
     return original_stored_imgname, original_stored_feat
 
 
@@ -104,13 +112,11 @@ def simclr_resnet(width: int):
     model_rep.cuda().eval()
     return model_rep
 
-def ViT_rep(model_name: str):
-    model = ViT(model_name, pretrained=True, image_size=384)
-    model_rep = GetModelIntermediateLayer(model, -1)
-    model_rep.cuda().eval()
-    return model_rep
-
 def timm_get_model(model_name: str):
-    model = timm.create_model(model_name, pretrained=True)
+    simclr_models = ['simclr_v1_resnet50x1', 'simclr_v1_resnet50x2', 'simclr_v1_resnet50x4']
+    if model_name in simclr_models:
+        model = simclr_resnet(int(model_name.split('x')[-1]))
+    else:
+        model = timm.create_model(model_name, pretrained=True)
     model.cuda().eval()
     return model
