@@ -94,10 +94,10 @@ class PermutationPairsDataset(Dataset):
         return len(self.original)**2
 
 class HDFDataset(Dataset):
-    def __init__(self, hdfstore):
+    def __init__(self, hdfstore, mem_usage=0.85):
         self.hdfstore = hdfstore
         self.datalen = len(self.hdfstore)
-        self.pull_data_to_cache()
+        self.pull_data_to_cache(mem_usage)
         if not self.all_in_cache:
             print("initializing placeholder cache list")
             self.cache_length = int(psutil.virtual_memory().available*0.85/self.hdfstore[0].nbytes)
@@ -121,9 +121,9 @@ class HDFDataset(Dataset):
     def __len__(self):
         return self.datalen
 
-    def pull_data_to_cache(self):
+    def pull_data_to_cache(self, mem_usage):
         single_row = self.hdfstore[0]
-        if psutil.virtual_memory().available*0.85 < single_row.nbytes * self.datalen:
+        if psutil.virtual_memory().available*mem_usage < single_row.nbytes * self.datalen:
             print("Not enough memory to pull data to cache")
             self.all_in_cache = False
         else:

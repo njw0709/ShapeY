@@ -238,21 +238,21 @@ class ImgCorrelationDataProcessorV2:
             max_idxs.append(cp.nanargmax(res, axis=1))
         return np.array(max_cvals, dtype=float).T, np.array(max_idxs, dtype=np.int64).T
     
-    def exclusion_distance_analysis(self, hdfstore: File, post_processed: bool = False, pp_exclusion: str = 'soft', pure: bool = False, num_objs: int = 0) -> None:
+    def exclusion_distance_analysis(self, hdfstore: File, contrast_reversed: bool = False, exclusion_mode: str = 'soft', pure: bool = False, num_objs: int = 0) -> None:
         if num_objs == 0:
-            if post_processed:
-                cval_matrix = hdfstore['/pairwise_correlation/postprocessed']
-                key_head = 'postprocessed/{}'.format(pp_exclusion)
-                if pp_exclusion == 'hard':
+            if contrast_reversed:
+                cval_matrix = hdfstore['/pairwise_correlation/contrast_reversed']
+                key_head = 'contrast_reversed/{}'.format(exclusion_mode)
+                if exclusion_mode == 'hard':
                     cval_orig = hdfstore['/pairwise_correlation/original']
             else:
                 cval_matrix = hdfstore['/pairwise_correlation/original']
                 key_head = 'original'
         else:
-            if post_processed:
-                cval_matrix = hdfstore['/pairwise_correlation/postprocessed_{}'.format(num_objs)]
-                key_head = 'postprocessed_{}/{}'.format(num_objs, pp_exclusion)
-                if pp_exclusion == 'hard':
+            if contrast_reversed:
+                cval_matrix = hdfstore['/pairwise_correlation/contrast_reversed_{}'.format(num_objs)]
+                key_head = 'contrast_reversed_{}/{}'.format(num_objs, exclusion_mode)
+                if exclusion_mode == 'hard':
                     cval_orig = hdfstore['/pairwise_correlation/original_{}'.format(num_objs)]
             else:
                 cval_matrix = hdfstore['/pairwise_correlation/original_{}'.format(num_objs)]
@@ -270,12 +270,12 @@ class ImgCorrelationDataProcessorV2:
                 cval_arr_sameobj, idx_sameobj =  self.get_top1_sameobj_with_exclusion(obj, ax, cval_matrix, pure=pure)
                 hdfstore[obj_ax_key+'/top1_cvals'] = cval_arr_sameobj
                 hdfstore[obj_ax_key+'/top1_idx'] = idx_sameobj
-                if not post_processed:
+                if not contrast_reversed:
                     cval_mat_name = 'cval_matrix'
                 else:
-                    if pp_exclusion == 'soft':
+                    if exclusion_mode == 'soft':
                         cval_mat_name = 'cval_matrix'
-                    elif pp_exclusion == 'hard':
+                    elif exclusion_mode == 'hard':
                         cval_mat_name = 'cval_orig'
                 #grab top1 for all other objects
                 top1_idx_otherobj, top1_cval_otherobj, sameobj_imagerank = self.get_top1_cval_other_object(locals()[cval_mat_name], obj, ax, cval_arr_sameobj)
