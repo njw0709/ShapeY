@@ -4,7 +4,7 @@ from itertools import combinations
 import cupy as cp
 from cupyx.scipy.linalg import tri
 import functools
-from shapey.utils.customdataset import ImageFolderWithPaths, OriginalandPostProcessedPairsDataset
+from shapey.utils.customdataset import ImageFolderWithPaths, PermutationPairsDataset, PermutationIndexDataset
 from shapey.utils.modelutils import GetModelIntermediateLayer
 from shapey.utils.customfunc import pearsonr_batch
 import torchvision.transforms as transforms
@@ -25,7 +25,7 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
 
     data_loader = torch.utils.data.DataLoader(dataset,
                     batch_size=1, shuffle=False,
-                    num_workers=4, pin_memory=True)
+                    num_workers=0, pin_memory=True)
     resnet50 = models.resnet50(pretrained=True)
     resnet50_gap = GetModelIntermediateLayer(resnet50, -1)
     resnet50_gap.cuda().eval()
@@ -44,21 +44,25 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
     return original_stored_imgname, original_stored_feat
 
 
-def compute_correlation_and_save(permutation_dataset: OriginalandPostProcessedPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8) -> None:
+def compute_correlation_and_save(permutation_dataset: PermutationPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8) -> None:
     data_loader = torch.utils.data.DataLoader(permutation_dataset,
                                               batch_size=batch_size,
                                               shuffle=False,
-                                              num_workers=8,
-                                              pin_memory=True)
+                                              pin_memory=True,
+                                              num_workers=num_workers)
     print('Computing feature correlations...')
     for s1, s2 in tqdm(data_loader):
         idx1, feat1 = s1
         idx2, feat2 = s2
         idx1 = idx1.data.numpy()
         idx2 = idx2.data.numpy()
+        # feat1 = hdfstore[feature_output_key][idx1, :]
+        # feat2 = hdfstore[feature_output_key][idx2, :]
+        # feat1 = torch.tensor(feat1).cuda()
+        # feat2 = torch.tensor(feat2).cuda()
 
         # compute correlation
-        rval = pearsonr_batch(feat1[0].cuda(), feat2[0].cuda())
+        rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
         data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
         data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
         hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
