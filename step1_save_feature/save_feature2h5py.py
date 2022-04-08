@@ -19,8 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--contrast_reversed_input_dir', type=str, default=os.path.join(DATA_DIR, 'ShapeY200CR'))
     parser.add_argument('--recompute_feat', type=int, default=0)
     parser.add_argument('--run_example', type=int, default=1)
-    parser.add_argument('--name', type=str, default='ResNet50')
-    parser.add_argument('--feature_layer', type=str, default='avgpool')
+    parser.add_argument('--name', type=str, default='tf_efficientnet_l2_ns_475')
     parser.add_argument('--input_size', type=int, default=224)
 
     args = parser.parse_args()
@@ -33,10 +32,10 @@ if __name__ == '__main__':
         datadir = args.input_dir
     hdfname = os.path.join(args.output_dir, args.name+'.h5')
 
-    first_time = os.path.exists(hdfname)
+    file_exists = os.path.exists(hdfname)
     feature_group_key = '/feature_output'
     try:
-        if not args.contrast_reversed and (args.recompute_feat or first_time):
+        if not args.contrast_reversed and (args.recompute_feat or not file_exists):
             hdfstore = h5py.File(hdfname, 'w')
             hdfstore.create_group(feature_group_key)
         else:
@@ -49,7 +48,7 @@ if __name__ == '__main__':
             imgname_key = feature_group_key + '/imgname'
             feature_output_key = feature_group_key + '/output'
 
-        if args.recompute_feat or first_time:
+        if args.recompute_feat or not file_exists or args.contrast_reversed:
             if args.run_example:
                 print('Extracting resnet feature outputs...')
                 original_stored_imgname, original_stored_feat = extract_features_resnet50(datadir)
@@ -61,7 +60,9 @@ if __name__ == '__main__':
                 ## TODO: implement a version where you extract and save batches, not the whole thing at once 
                 model_name = args.name
                 model = timm_get_model(model_name)
-                original_stored_imgname, original_stored_feat = extract_features_torch_with_hooks(datadir, model, args.feature_layer, input_img_size=args.input_size)
+                l = [m for m in model.named_modules()]
+                feature_layer = l[-1][0]
+                original_stored_imgname, original_stored_feat = extract_features_torch_with_hooks(datadir, model, feature_layer, input_img_size=args.input_size)
                 imgname_order = np.array(original_stored_imgname)
                 imgname_order = imgname_order.astype('U')
                 reference_imgname = np.load(os.path.join(PROJECT_DIR, 'step1_save_feature', 'imgname_ref.npy'))

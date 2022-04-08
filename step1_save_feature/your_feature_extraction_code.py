@@ -108,9 +108,7 @@ def simclr_resnet(width: int):
         model.load_state_dict(sd['state_dict'])
     else:
         raise ValueError("Invalid width")
-    model_rep = GetModelIntermediateLayer(model, -1)
-    model_rep.cuda().eval()
-    return model_rep
+    return model
 
 def timm_get_model(model_name: str):
     simclr_models = ['simclr_v1_resnet50x1', 'simclr_v1_resnet50x2', 'simclr_v1_resnet50x4']

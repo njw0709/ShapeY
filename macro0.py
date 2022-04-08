@@ -12,20 +12,20 @@ networks = [
     'xcit_large_24_p8_224_dist',
     'resnetv2_101x3_bitm',
     'resnetv2_101x3_bitm_in21k',
-    'beit_base_patch16_224'
+    'beit_base_patch16_224',
+    'beit_base_patch16_224_in22k',
+    'coat_mini',
+    'mixer_b16_224',
+    'mobilenetv3_large_100',
+    'resnetv2_50x1_bit_distilled',
+    'resnext50d_32x4d',
+    'seresnet50',
+    'swsl_resnet50'
 ]
 
-output_layers = [
-    'pre_logits',
-    'pre_logits',
-    'norm',
-    'norm',
-    'head.global_pool',
-    'head.global_pool',
-    'fc_norm'
-]
-
-for feature_extraction_system_name, feature_layer_name in zip(networks, output_layers):
+# running contrast reversed
+for feature_extraction_system_name in networks:
+    
     # saves the embedding vectors of the images to .h5 file.
     subprocess.run([python_version, 
                     os.path.join("step1_save_feature", "save_feature2h5py.py"), 
@@ -37,15 +37,23 @@ for feature_extraction_system_name, feature_layer_name in zip(networks, output_l
                     "0",
                     "--name",
                     feature_extraction_system_name,
-                    "--feature_layer",
-                    feature_layer_name
+                    "--contrast_reversed",
+                    "1",
+                    '--contrast_reversed_input_dir',
+                    os.path.join("data", "ShapeY200CR")
                     ])
 
     # computes correlation with the extracted embedding vectors.
     subprocess.run([python_version,
                     os.path.join("step2_compute_feature_correlation", "compute_correlation.py"),
                     "--input_dir",
-                    os.path.join("data", "intermediate", feature_extraction_system_name+".h5")
+                    os.path.join("data", "intermediate", feature_extraction_system_name+".h5"),
+                    "--batch_size", "20000",
+                    "--feature_name", feature_extraction_system_name,
+                    "--num_workers", 
+                    "8",
+                    "--contrast_reversed",
+                    "1"
                     ])
 
     # runs nearest-neighbor benchmark analaysis
@@ -54,27 +62,64 @@ for feature_extraction_system_name, feature_layer_name in zip(networks, output_l
                     "--input_dir",
                     os.path.join("data", "intermediate", feature_extraction_system_name+".h5"),
                     "--output_dir",
-                    os.path.join("data", "processed", feature_extraction_system_name+".h5")
+                    os.path.join("data", "processed", feature_extraction_system_name+"_cr.h5"),
+                    "--contrast_reversed",
+                    "1"
                     ])
 
     # graphs results (exclusion distance vs nn matching error)
     subprocess.run([python_version,
                     os.path.join("step4_graph_results", "graph_exclusion_top1error_v2.py"),
                     "--input_dir",
-                    os.path.join("data", "processed", feature_extraction_system_name+".h5"),
+                    os.path.join("data", "processed", feature_extraction_system_name+"_cr.h5"),
                     "--output_dir",
                     os.path.join("figures", feature_extraction_system_name),
                     "--within_category_error",
-                    "0"
+                    "0",
+                    "--contrast_reversed",
+                    "1",
+                    "--exclusion_mode",
+                    "soft"
                     ])
 
     subprocess.run([python_version,
                     os.path.join("step4_graph_results", "graph_exclusion_top1error_v2.py"),
                     "--input_dir",
-                    os.path.join("data", "processed", feature_extraction_system_name+".h5"),
+                    os.path.join("data", "processed", feature_extraction_system_name+"_cr.h5"),
                     "--output_dir",
                     os.path.join("figures", feature_extraction_system_name),
                     "--within_category_error",
-                    "1"
+                    "1",
+                    "--contrast_reversed",
+                    "1",
+                    "--exclusion_mode",
+                    "soft"
                     ])
 
+    subprocess.run([python_version,
+                    os.path.join("step4_graph_results", "graph_exclusion_top1error_v2.py"),
+                    "--input_dir",
+                    os.path.join("data", "processed", feature_extraction_system_name+"_cr.h5"),
+                    "--output_dir",
+                    os.path.join("figures", feature_extraction_system_name),
+                    "--within_category_error",
+                    "0",
+                    "--contrast_reversed",
+                    "1",
+                    "--exclusion_mode",
+                    "hard"
+                    ])
+
+    subprocess.run([python_version,
+                    os.path.join("step4_graph_results", "graph_exclusion_top1error_v2.py"),
+                    "--input_dir",
+                    os.path.join("data", "processed", feature_extraction_system_name+"_cr.h5"),
+                    "--output_dir",
+                    os.path.join("figures", feature_extraction_system_name),
+                    "--within_category_error",
+                    "1",
+                    "--contrast_reversed",
+                    "1",
+                    "--exclusion_mode",
+                    "hard"
+                    ])
