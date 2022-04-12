@@ -1,6 +1,5 @@
 from shapey.visualization.exclusion_distance import NNClassificationErrorV2
 from shapey.utils.macroutils import make_axis_of_interest
-import argparse
 import os
 import h5py
 import numpy as np
@@ -9,7 +8,7 @@ matplotlib.use('Agg')
 
 from hydra import compose, initialize
 import logging
-from configs import ShapeYConfig
+from shapey.utils.configs import ShapeYConfig
 
 log = logging.getLogger(__name__)
 

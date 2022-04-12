@@ -5,7 +5,7 @@ import h5py
 
 from hydra import compose, initialize
 import logging
-from configs import ShapeYConfig
+from shapey.utils.configs import ShapeYConfig
 
 log = logging.getLogger(__name__)
 

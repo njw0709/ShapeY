@@ -1,5 +1,5 @@
 from shapey.dataprocess.raw_data import AllImgPairCorrelationData, PostProcessedAllImgPairCorrelationData
-from configs import ShapeYConfig
+from shapey.utils.configs import ShapeYConfig
 from hydra import compose, initialize
 import logging
 log = logging.getLogger(__name__)

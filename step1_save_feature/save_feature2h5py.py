@@ -12,6 +12,9 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def sample():
+    print('yay')
+
 def save_feature(args: ShapeYConfig) -> bool:
     if args.data.cr:
         datadir = args.data.cr_data_dir
@@ -48,7 +51,7 @@ def save_feature(args: ShapeYConfig) -> bool:
                 #### put your feature extraction code here!! #####
                 ## TODO: implement a version where you extract and save batches, not the whole thing at once 
                 model_name = args.network.name
-                model = timm_get_model(model_name)
+                model = timm_get_model(model_name, args)
                 l = [m for m in model.named_modules()]
                 feature_layer = l[-1][0]
                 log.info('Extracting features from images ({})'.format(model_name))

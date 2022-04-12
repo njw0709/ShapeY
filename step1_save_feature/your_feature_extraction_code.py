@@ -1,7 +1,7 @@
 from typing import Tuple
 from resnet_wider import resnet50x1, resnet50x2, resnet50x4
 import torch
-from shapey.utils.modelutils import GetModelIntermediateLayer
+from shapey.utils.configs import ShapeYConfig
 import torchvision.transforms as transforms
 import torch
 from pytorch_pretrained_vit import ViT
@@ -9,8 +9,6 @@ from shapey.utils.customdataset import ImageFolderWithPaths
 from tqdm import tqdm
 import timm
 import os
-
-PROJECT_DIR = os.path.join(os.path.dirname(__file__), '..')
 
 
 def your_feature_output_code(datadir: str) -> Tuple[list, list]:
@@ -93,27 +91,27 @@ def extract_features_torch_with_hooks(datadir: str, model, final_layer_name: str
     return original_stored_imgname, original_stored_feat
 
 
-def simclr_resnet(width: int):
+def simclr_resnet(width: int, project_dir):
     if width == 1:
         model = resnet50x1()
-        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-1x.pth'), map_location='cpu')
+        sd = torch.load(os.path.join(project_dir, 'simclr', 'resnet-1x.pth'), map_location='cpu')
         model.load_state_dict(sd['state_dict'])
     elif width == 2:
         model = resnet50x2()
-        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-2x.pth'), map_location='cpu')
+        sd = torch.load(os.path.join(project_dir, 'simclr', 'resnet-2x.pth'), map_location='cpu')
         model.load_state_dict(sd['state_dict'])
     elif width == 4:
         model = resnet50x4()
-        sd = torch.load(os.path.join(PROJECT_DIR, 'simclr', 'resnet-4x.pth'), map_location='cpu')
+        sd = torch.load(os.path.join(project_dir, 'simclr', 'resnet-4x.pth'), map_location='cpu')
         model.load_state_dict(sd['state_dict'])
     else:
         raise ValueError("Invalid width")
     return model
 
-def timm_get_model(model_name: str):
+def timm_get_model(model_name: str, args: ShapeYConfig):
     simclr_models = ['simclr_v1_resnet50x1', 'simclr_v1_resnet50x2', 'simclr_v1_resnet50x4']
     if model_name in simclr_models:
-        model = simclr_resnet(int(model_name.split('x')[-1]))
+        model = simclr_resnet(int(model_name.split('x')[-1]), args.data.project_dir)
     else:
         model = timm.create_model(model_name, pretrained=True)
     model.cuda().eval()
