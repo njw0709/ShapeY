@@ -1,0 +1,9 @@
+defaults:
+  - data:
+    - ShapeY200
+  - network:
+    - example
+  - graph:
+    - obj
+  - pipeline:
+    - defaultpipe

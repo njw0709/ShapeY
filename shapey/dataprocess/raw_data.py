@@ -4,14 +4,19 @@ from itertools import combinations
 import cupy as cp
 from cupyx.scipy.linalg import tri
 import functools
-from shapey.utils.customdataset import ImageFolderWithPaths, PermutationPairsDataset, PermutationIndexDataset
+from shapey.utils.customdataset import ImageFolderWithPaths, PermutationPairsDataset
 from shapey.utils.modelutils import GetModelIntermediateLayer
 from shapey.utils.customfunc import pearsonr_batch
 import torchvision.transforms as transforms
 import torch
 import torchvision.models as models
+from torch.utils.data import Subset
 from typing import Tuple
 from h5py import File
+import logging
+import traceback
+
+log = logging.getLogger(__name__)
 
 def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -50,22 +55,42 @@ def compute_correlation_and_save(permutation_dataset: PermutationPairsDataset, h
                                               shuffle=False,
                                               pin_memory=True,
                                               num_workers=num_workers)
-    print('Computing feature correlations...')
-    for s1, s2 in tqdm(data_loader):
-        idx1, feat1 = s1
-        idx2, feat2 = s2
-        idx1 = idx1.data.numpy()
-        idx2 = idx2.data.numpy()
-        # feat1 = hdfstore[feature_output_key][idx1, :]
-        # feat2 = hdfstore[feature_output_key][idx2, :]
-        # feat1 = torch.tensor(feat1).cuda()
-        # feat2 = torch.tensor(feat2).cuda()
+    log.info('Computing feature correlations...')
+    completed = False
+    while not completed:
+        try:
+            for s1, s2 in tqdm(data_loader):
+                idx1, feat1 = s1
+                idx2, feat2 = s2
+                idx1 = idx1.data.numpy()
+                idx2 = idx2.data.numpy()
+                # feat1 = hdfstore[feature_output_key][idx1, :]
+                # feat2 = hdfstore[feature_output_key][idx2, :]
+                # feat1 = torch.tensor(feat1).cuda()
+                # feat2 = torch.tensor(feat2).cuda()
 
-        # compute correlation
-        rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
-        data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
-        data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
-        hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
+                # compute correlation
+                rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
+                data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
+                data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
+                hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
+                log.info('Last computed: idx1: {}, idx2: {}'.format(idx1[-1], idx2[-1]))
+            completed = True
+        except Exception as e:
+            log.error(e)
+            log.error(traceback.format_exc())
+            log.info('Last batch computed: ({}, {}) ~ ({}, {})'.format(idx1[0], idx2[0], idx1[-1], idx2[-1]))
+        finally:
+            del data_loader
+            if not completed:
+                log.info('Restarting data loader from ({}, {})...'.format(idx1[0], idx2[0]))
+                idx = idx1[0]*permutation_dataset.datalen + idx2[0]
+                new_dataset = Subset(permutation_dataset, range(idx, len(permutation_dataset)))
+                data_loader = torch.utils.data.DataLoader(new_dataset,
+                                                            batch_size=batch_size,
+                                                            shuffle=False,
+                                                            pin_memory=True,
+                                                            num_workers=num_workers)
 
 class ImgCorrelationDataProcessorV2:
 
