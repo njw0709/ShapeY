@@ -60,8 +60,13 @@ def save_feature(args: ShapeYConfig) -> bool:
                 imgname_order = imgname_order.astype('U')
                 reference_imgname = np.load(os.path.join(args.data.project_dir, 'step1_save_feature', 'imgname_ref.npy'))
                 assert check_image_order(original_stored_imgname, reference_imgname)
-                origianl_imgnames = hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
-                original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
+                try:
+                    original_imgnames = hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
+                    original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
+                except Exception as e:
+                    log.info('Error: {}'.format(e))
+                    hdfstore[imgname_key] = np.array(original_stored_imgname).astype('S')
+                    hdfstore[feature_output_key] = original_stored_feat
                 log.info('Saved {} feature outputs!'.format(args.network.name))
         else:
             log.info('Retrieving saved features...')

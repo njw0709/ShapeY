@@ -15,13 +15,13 @@ log = logging.getLogger(__name__)
 def graph_exclusion_top1(args: ShapeYConfig) -> None:
     log.info("Generating Exclusion graphs...")
     input_name = args.pipeline.step4_input
-    output_dir = os.path.join(args.output_dir, 'exclusion_distance')
+    output_dir = os.path.join(args.pipeline.step4_output, 'exclusion_distance')
     os.makedirs(output_dir, exist_ok=True)
     common_fig_name = 'top1_error_'
     if args.graph.match_mode == 'category':
         common_fig_name += 'category_'
     if args.data.cr:
-        common_fig_name += 'cr_{}_'.format(args.exclusion_mode)
+        common_fig_name += 'cr_{}_'.format(args.graph.cr_mode)
     axes = make_axis_of_interest()
 
     ones = [idx for idx, e in enumerate(axes) if len(e)==1]
