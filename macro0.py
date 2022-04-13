@@ -8,7 +8,7 @@ networks = [
     'tf_efficientnet_l2_ns_475',
     'resnetv2_101x3_bitm',
     'resnetv2_101x3_bitm_in21k',
-    'SimCLR_ResNet50_4x', #needs to be re-run
+    'simclr_v1_resnet50x4', #needs to be re-run
 ]
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
