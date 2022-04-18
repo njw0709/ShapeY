@@ -290,7 +290,7 @@ class ImgCorrelationDataProcessorV2:
                 try:
                     hdfstore.create_group(obj_ax_key)
                 except ValueError:
-                    print(obj_ax_key + " already exists")
+                    log.info(obj_ax_key + " already exists")
                 #make same object cval array with exclusion distance in ax
                 cval_arr_sameobj, idx_sameobj =  self.get_top1_sameobj_with_exclusion(obj, ax, cval_matrix, pure=pure)
                 hdfstore[obj_ax_key+'/top1_cvals'] = cval_arr_sameobj

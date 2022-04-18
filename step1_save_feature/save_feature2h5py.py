@@ -65,8 +65,10 @@ def save_feature(args: ShapeYConfig) -> bool:
                     original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
                 except Exception as e:
                     log.info('Error: {}'.format(e))
-                    hdfstore[imgname_key] = np.array(original_stored_imgname).astype('S')
-                    hdfstore[feature_output_key] = original_stored_feat
+                    del hdfstore[imgname_key]
+                    del hdfstore[feature_output_key]
+                    original_imgnames = hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
+                    original_features = hdfstore.create_dataset(feature_output_key, data=original_stored_feat)
                 log.info('Saved {} feature outputs!'.format(args.network.name))
         else:
             log.info('Retrieving saved features...')
