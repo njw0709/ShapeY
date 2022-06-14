@@ -4,14 +4,19 @@ from itertools import combinations
 import cupy as cp
 from cupyx.scipy.linalg import tri
 import functools
-from shapey.utils.customdataset import ImageFolderWithPaths, OriginalandPostProcessedPairsDataset
+from shapey.utils.customdataset import ImageFolderWithPaths, PermutationPairsDataset
 from shapey.utils.modelutils import GetModelIntermediateLayer
 from shapey.utils.customfunc import pearsonr_batch
 import torchvision.transforms as transforms
 import torch
 import torchvision.models as models
+from torch.utils.data import Subset
 from typing import Tuple
 from h5py import File
+import logging
+import traceback
+
+log = logging.getLogger(__name__)
 
 def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -25,7 +30,7 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
 
     data_loader = torch.utils.data.DataLoader(dataset,
                     batch_size=1, shuffle=False,
-                    num_workers=4, pin_memory=True)
+                    num_workers=0, pin_memory=True)
     resnet50 = models.resnet50(pretrained=True)
     resnet50_gap = GetModelIntermediateLayer(resnet50, -1)
     resnet50_gap.cuda().eval()
@@ -44,24 +49,48 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
     return original_stored_imgname, original_stored_feat
 
 
-def compute_correlation_and_save(permutation_dataset: OriginalandPostProcessedPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8) -> None:
+def compute_correlation_and_save(permutation_dataset: PermutationPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8) -> None:
     data_loader = torch.utils.data.DataLoader(permutation_dataset,
                                               batch_size=batch_size,
                                               shuffle=False,
-                                              num_workers=8,
-                                              pin_memory=True)
-    print('Computing feature correlations...')
-    for s1, s2 in tqdm(data_loader):
-        idx1, feat1 = s1
-        idx2, feat2 = s2
-        idx1 = idx1.data.numpy()
-        idx2 = idx2.data.numpy()
+                                              pin_memory=True,
+                                              num_workers=num_workers)
+    log.info('Computing feature correlations...')
+    completed = False
+    while not completed:
+        try:
+            for s1, s2 in tqdm(data_loader):
+                idx1, feat1 = s1
+                idx2, feat2 = s2
+                idx1 = idx1.data.numpy()
+                idx2 = idx2.data.numpy()
+                # feat1 = hdfstore[feature_output_key][idx1, :]
+                # feat2 = hdfstore[feature_output_key][idx2, :]
+                # feat1 = torch.tensor(feat1).cuda()
+                # feat2 = torch.tensor(feat2).cuda()
 
-        # compute correlation
-        rval = pearsonr_batch(feat1[0].cuda(), feat2[0].cuda())
-        data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
-        data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
-        hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
+                # compute correlation
+                rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
+                data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
+                data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
+                hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
+                log.info('Last computed: idx1: {}, idx2: {}'.format(idx1[-1], idx2[-1]))
+            completed = True
+        except Exception as e:
+            log.error(e)
+            log.error(traceback.format_exc())
+            log.info('Last batch computed: ({}, {}) ~ ({}, {})'.format(idx1[0], idx2[0], idx1[-1], idx2[-1]))
+        finally:
+            del data_loader
+            if not completed:
+                log.info('Restarting data loader from ({}, {})...'.format(idx1[0], idx2[0]))
+                idx = idx1[0]*permutation_dataset.datalen + idx2[0]
+                new_dataset = Subset(permutation_dataset, range(idx, len(permutation_dataset)))
+                data_loader = torch.utils.data.DataLoader(new_dataset,
+                                                            batch_size=batch_size,
+                                                            shuffle=False,
+                                                            pin_memory=True,
+                                                            num_workers=num_workers)
 
 class ImgCorrelationDataProcessorV2:
 
@@ -234,21 +263,21 @@ class ImgCorrelationDataProcessorV2:
             max_idxs.append(cp.nanargmax(res, axis=1))
         return np.array(max_cvals, dtype=float).T, np.array(max_idxs, dtype=np.int64).T
     
-    def exclusion_distance_analysis(self, hdfstore: File, post_processed: bool = False, pp_exclusion: str = 'soft', pure: bool = False, num_objs: int = 0) -> None:
+    def exclusion_distance_analysis(self, hdfstore: File, contrast_reversed: bool = False, exclusion_mode: str = 'soft', pure: bool = False, num_objs: int = 0) -> None:
         if num_objs == 0:
-            if post_processed:
-                cval_matrix = hdfstore['/pairwise_correlation/postprocessed']
-                key_head = 'postprocessed/{}'.format(pp_exclusion)
-                if pp_exclusion == 'hard':
+            if contrast_reversed:
+                cval_matrix = hdfstore['/pairwise_correlation/contrast_reversed']
+                key_head = 'contrast_reversed/{}'.format(exclusion_mode)
+                if exclusion_mode == 'hard':
                     cval_orig = hdfstore['/pairwise_correlation/original']
             else:
                 cval_matrix = hdfstore['/pairwise_correlation/original']
                 key_head = 'original'
         else:
-            if post_processed:
-                cval_matrix = hdfstore['/pairwise_correlation/postprocessed_{}'.format(num_objs)]
-                key_head = 'postprocessed_{}/{}'.format(num_objs, pp_exclusion)
-                if pp_exclusion == 'hard':
+            if contrast_reversed:
+                cval_matrix = hdfstore['/pairwise_correlation/contrast_reversed_{}'.format(num_objs)]
+                key_head = 'contrast_reversed_{}/{}'.format(num_objs, exclusion_mode)
+                if exclusion_mode == 'hard':
                     cval_orig = hdfstore['/pairwise_correlation/original_{}'.format(num_objs)]
             else:
                 cval_matrix = hdfstore['/pairwise_correlation/original_{}'.format(num_objs)]
@@ -261,17 +290,17 @@ class ImgCorrelationDataProcessorV2:
                 try:
                     hdfstore.create_group(obj_ax_key)
                 except ValueError:
-                    print(obj_ax_key + " already exists")
+                    log.info(obj_ax_key + " already exists")
                 #make same object cval array with exclusion distance in ax
                 cval_arr_sameobj, idx_sameobj =  self.get_top1_sameobj_with_exclusion(obj, ax, cval_matrix, pure=pure)
                 hdfstore[obj_ax_key+'/top1_cvals'] = cval_arr_sameobj
                 hdfstore[obj_ax_key+'/top1_idx'] = idx_sameobj
-                if not post_processed:
+                if not contrast_reversed:
                     cval_mat_name = 'cval_matrix'
                 else:
-                    if pp_exclusion == 'soft':
+                    if exclusion_mode == 'soft':
                         cval_mat_name = 'cval_matrix'
-                    elif pp_exclusion == 'hard':
+                    elif exclusion_mode == 'hard':
                         cval_mat_name = 'cval_orig'
                 #grab top1 for all other objects
                 top1_idx_otherobj, top1_cval_otherobj, sameobj_imagerank = self.get_top1_cval_other_object(locals()[cval_mat_name], obj, ax, cval_arr_sameobj)

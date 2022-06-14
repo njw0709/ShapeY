@@ -7,11 +7,20 @@ Requirements: Python 3, Cuda version 10.2 (prerequisite for cupy)
 
 To install ShapeY, run the following command:
 ```
-pip3 install shapey==0.0.7
+pip3 install shapey==0.0.13
 ```
 
 ## Step0: Download ShapeY200 dataset
 Run `download.sh` to download the dataset. The script automatically unzips the images under `data/ShapeY200/`.
+Downloading uses gdown, which is google drive command line tool. If it does not work, please just follow the two links down below to download the ShapeY200 / ShapeY200CR datasets.
+
+ShapeY200:
+https://drive.google.com/uc?id=1arDu0c9hYLHVMiB52j_a-e0gVnyQfuQV
+
+ShapeY200CR:
+https://drive.google.com/uc?id=1WXpNUVRn6D0F9T3IHruml2DcDCFRsix-
+
+After downloading the two datasets, move each of them to the `data/` directory. For example, all of the images for ShapeY200 should be under `data/ShapeY200/dataset/`.
 
 ## Step1: Extract the embedding vectors from your own vision model using our dataset
 Implement the function `your_feature_output_code` in `step1_save_feature/your_feature_extraction_code.py`. The function should take in the path to the dataset as input and return two lists - one for the image names and another for the corresponding embedding vectors taken from whatever system.

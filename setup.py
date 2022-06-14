@@ -7,15 +7,15 @@ with open('README.md') as file:
   
 # specify requirements of your package here
 REQUIREMENTS = [
-    'torch == 1.5.0',
-    'torchvision == 0.6.0',
-    'numpy==1.18.4',
-    'kaleido==0.0.1',
-    'tqdm==4.48.0',
+    'torch >= 1.10.0',
+    'torchvision >= 0.11.2',
+    'numpy>=1.18.4',
+    'kaleido>=0.0.1',
+    'tqdm>=4.48.0',
     'cupy-cuda102',
-    'matplotlib==3.3.1',
-    'gdown==4.0.2', 
-    'h5py==2.10.0'
+    'matplotlib>=3.3.1',
+    'gdown>=4.0.2', 
+    'h5py>=2.10.0'
 ]
   
 # some more details
@@ -27,7 +27,7 @@ CLASSIFIERS = [
   
 # calling the setup function 
 setuptools.setup(name='ShapeY',
-                version='0.0.7',
+                version='0.0.13',
                 description='Benchmark that tests shape recognition',
                 long_description=long_description,
                 url='https://github.com/njw0709/ShapeY',

@@ -1,0 +1,5 @@
+name: resnet50
+input_size: 224
+batch_size: 10000
+num_workers: 6
+gpu_num: 0

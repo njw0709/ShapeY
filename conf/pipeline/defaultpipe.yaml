@@ -1,0 +1,8 @@
+step1_input: ${data.data_dir}
+step1_output: ${data.project_dir}/data/intermediate/${network.name}.h5
+step1_recompute: 1
+step2_input: ${pipeline.step1_output}
+step3_input: ${pipeline.step1_output}
+step3_output: ${data.project_dir}/data/processed/${network.name}.h5
+step4_input: ${pipeline.step3_output}
+step4_output: ${data.project_dir}/figures/${network.name}/

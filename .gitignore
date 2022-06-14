@@ -1,6 +1,13 @@
 # project specific
 ShapeY200/
 data/
+simclr/
+figures/
+notebooks/
+outputs/
+multirun/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
