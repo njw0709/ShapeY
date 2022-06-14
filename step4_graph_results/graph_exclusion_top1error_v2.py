@@ -22,6 +22,7 @@ def graph_exclusion_top1(args: ShapeYConfig) -> bool:
         common_fig_name += 'category_'
     if args.data.cr:
         common_fig_name += 'cr_{}_'.format(args.graph.cr_mode)
+        input_name = input_name.split('.')[0] + '_cr.h5'
     axes = make_axis_of_interest()
 
     ones = [idx for idx, e in enumerate(axes) if len(e)==1]
@@ -34,7 +35,7 @@ def graph_exclusion_top1(args: ShapeYConfig) -> bool:
             imgnames = hdfstore['/feature_output/imgname'][:].astype('U')
             objnames = np.unique(np.array([c.split('-')[0] for c in imgnames]))
             if args.data.cr:
-                key_head = key_head = '/contrast_reversed/{}'.format(args.graph.cr_mode)
+                key_head = '/contrast_reversed/{}'.format(args.graph.cr_mode)
             else:
                 key_head = '/original'
             within_category = (args.graph.match_mode == 'category')
@@ -66,5 +67,5 @@ def graph_exclusion_top1(args: ShapeYConfig) -> bool:
 
 if __name__ == '__main__':
     with initialize(config_path="../conf", job_name="step4_graph_exclusion_top1"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY"])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY", 'network=resnet50_random', 'data=ShapeY200', 'graph=cat'])
         graph_exclusion_top1(cfg)

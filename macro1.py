@@ -28,4 +28,5 @@ if __name__ == '__main__':
                     '-m',
                     'network={}'.format(','.join(networks)),
                     'data=ShapeY200CR',
-                    'data.project_dir={}'.format(PROJECT_DIR)])
+                    'data.project_dir={}'.format(PROJECT_DIR),
+                    'graph=obj_cr_hard,obj_cr_soft,cat_cr_hard,cat_cr_soft'])

@@ -42,5 +42,5 @@ def get_nn_classification_error(args: ShapeYConfig) -> bool:
 
 if __name__ == '__main__':
     with initialize(config_path="../conf", job_name="step3_analysis_nn_classification_error"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY", 'network=mixer_b16_224', 'data=ShapeY200CR'])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY", 'network=resnet50_random', 'data=ShapeY200'])
         get_nn_classification_error(cfg)
