@@ -1,5 +1,0 @@
-name: simclr_v1_resnet50x1
-input_size: 224
-batch_size: 20000
-num_workers: 8
-gpu_num: 1

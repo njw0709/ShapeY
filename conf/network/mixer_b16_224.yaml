@@ -1,5 +1,0 @@
-name: mixer_b16_224
-input_size: 224
-batch_size: 20000
-num_workers: 8
-gpu_num: 1

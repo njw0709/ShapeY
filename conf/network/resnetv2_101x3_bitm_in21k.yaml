@@ -1,5 +1,0 @@
-name: resnetv2_101x3_bitm_in21k
-input_size: 224
-batch_size: 20000
-num_workers: 8
-gpu_num: 0
