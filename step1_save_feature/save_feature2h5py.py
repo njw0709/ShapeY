@@ -12,9 +12,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def sample():
-    print('yay')
-
 def save_feature(args: ShapeYConfig) -> bool:
     if args.data.cr:
         datadir = args.data.cr_data_dir
