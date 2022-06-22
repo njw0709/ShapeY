@@ -7,3 +7,5 @@ defaults:
     - obj
   - pipeline:
     - defaultpipe
+  - distance:
+    - correlation
