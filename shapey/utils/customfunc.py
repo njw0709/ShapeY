@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 def pearsonr(x, y):
     mean_x = torch.mean(x)
     mean_y = torch.mean(y)
@@ -18,12 +19,15 @@ def pearsonr_batch(x_batch, y_batch, prenormalized=False):
         mean_y_b = torch.mean(y_batch, 1, True)
         xm_b = x_batch.sub(mean_x_b)
         ym_b = y_batch.sub(mean_y_b)
-        r_num_b = (xm_b*ym_b).sum(1, keepdim=True)
-        r_den_b = torch.norm(xm_b, dim=1, keepdim=True)*torch.norm(ym_b, dim=1, keepdim=True)
+        r_num_b = (xm_b * ym_b).sum(1, keepdim=True)
+        r_den_b = torch.norm(xm_b, dim=1, keepdim=True) * torch.norm(
+            ym_b, dim=1, keepdim=True
+        )
         r_vals = r_num_b / r_den_b
     else:
-        r_vals = (x_batch*y_batch).sum(1, keepdim=True)
+        r_vals = (x_batch * y_batch).sum(1, keepdim=True)
     return r_vals
+
 
 def ln_batch(x_batch, y_batch, n=1):
     lndist = nn.PairwiseDistance(p=n, keepdim=True)

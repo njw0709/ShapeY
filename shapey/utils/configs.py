@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-#Dataset Parameters
+# Dataset Parameters
 @dataclass
 class DatasetConfig:
     project_dir: str
@@ -9,7 +9,8 @@ class DatasetConfig:
     cr: bool
     cr_data_dir: Optional[str]
 
-#Network inference parameters
+
+# Network inference parameters
 @dataclass
 class NetworkParams:
     name: str
@@ -18,14 +19,17 @@ class NetworkParams:
     num_workers: int
     gpu_num: int
 
+
 @dataclass
 class DistanceParams:
     metric: str
+
 
 @dataclass
 class AnalysisParams:
     match_mode: str
     cr_mode: Optional[str]
+
 
 @dataclass
 class PipelineParams:
@@ -37,6 +41,7 @@ class PipelineParams:
     step3_output: str
     step4_input: str
     step4_output: str
+
 
 @dataclass
 class ShapeYConfig:
