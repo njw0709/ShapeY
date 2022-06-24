@@ -8,3 +8,6 @@ matplotlib>=3.3.1
 gdown
 h5py>=2.10.0
 hydra>=1.1.1
+twine
+black
+pylint

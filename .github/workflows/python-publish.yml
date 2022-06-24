@@ -6,11 +6,9 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: ShapeY PyPi package upload
 
-name: Python application test with Github Actions
-
-on: [push]
+on: [release]
 
 jobs:
   build:
