@@ -30,10 +30,10 @@ def get_nn_classification_error(args: ShapeYConfig) -> bool:
         with h5py.File(output_name, 'a') as hdfstore:
             data_processor = ImgCorrelationDataProcessorV2(hdfstore)
             if args.data.cr:
-                data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.data.cr, exclusion_mode='soft')
-                data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.data.cr, exclusion_mode='hard')
+                data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.data.cr, exclusion_mode='soft', distance=args.distance.metric)
+                data_processor.exclusion_distance_analysis(hdfstore, contrast_reversed=args.data.cr, exclusion_mode='hard', distance=args.distance.metric)
             else:
-                data_processor.exclusion_distance_analysis(hdfstore)
+                data_processor.exclusion_distance_analysis(hdfstore, distance=args.distance.metric)
             completed = True
     except Exception as e:
         log.error("Failed to do exclusion distance analysis: {}".format(e))

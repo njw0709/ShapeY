@@ -39,7 +39,7 @@ def graph_exclusion_top1(args: ShapeYConfig) -> bool:
             else:
                 key_head = '/original'
             within_category = (args.graph.match_mode == 'category')
-            res = [NNClassificationErrorV2.generate_top1_error_data(hdfstore, objnames, ax, key_head=key_head, within_category_error=within_category) for ax in axes]
+            res = [NNClassificationErrorV2.generate_top1_error_data(hdfstore, objnames, ax, key_head=key_head, within_category_error=within_category, distance=args.distance.metric) for ax in axes]
             res = list(zip(*res)) #top1_error_per_obj, top1_error_mean, num_correct_allobj, total_count
             res.append(axes)
             res = list(zip(*res))

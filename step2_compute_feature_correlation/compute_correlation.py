@@ -1,4 +1,4 @@
-from shapey.dataprocess.raw_data import compute_correlation_and_save
+from shapey.dataprocess.raw_data import compute_distance_and_save
 from shapey.utils.customdataset import HDFDataset, PermutationPairsDataset
 from shapey.utils.configs import ShapeYConfig
 import h5py
@@ -50,7 +50,7 @@ def compute_feature_correlation(args: ShapeYConfig) -> bool:
         except ValueError:
             log.info(corrval_key_original + " already exists")
 
-        compute_correlation_and_save(permutation_dataset, hdfstore, corrval_key_original, batch_size=args.network.batch_size, num_workers=args.network.num_workers)
+        compute_distance_and_save(permutation_dataset, hdfstore, corrval_key_original, batch_size=args.network.batch_size, num_workers=args.network.num_workers, distance=args.distance.metric)
         completed = True
     except Exception as e:
         log.error(e)

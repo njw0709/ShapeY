@@ -19,6 +19,10 @@ class NetworkParams:
     gpu_num: int
 
 @dataclass
+class DistanceParams:
+    metric: str
+
+@dataclass
 class AnalysisParams:
     match_mode: str
     cr_mode: Optional[str]
@@ -40,3 +44,4 @@ class ShapeYConfig:
     network: NetworkParams
     graph: AnalysisParams
     pipeline: PipelineParams
+    distance: DistanceParams

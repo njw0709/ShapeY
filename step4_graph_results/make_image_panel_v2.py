@@ -10,7 +10,7 @@ import matplotlib
 PROJECT_DIR = os.path.join(os.path.dirname(__file__), '..')
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 matplotlib.use('Agg')
-
+#TODO: update for other distance metrics
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='passes data directory and output file path')
     parser.add_argument('--input_dir', type=str, default=os.path.join(DATA_DIR, 'processed', 'your_feature.h5'))

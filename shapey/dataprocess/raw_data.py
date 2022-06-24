@@ -6,7 +6,7 @@ from cupyx.scipy.linalg import tri
 import functools
 from shapey.utils.customdataset import ImageFolderWithPaths, PermutationPairsDataset
 from shapey.utils.modelutils import GetModelIntermediateLayer
-from shapey.utils.customfunc import pearsonr_batch
+from shapey.utils.customfunc import pearsonr_batch, ln_batch
 import torchvision.transforms as transforms
 import torch
 import torchvision.models as models
@@ -91,6 +91,61 @@ def compute_correlation_and_save(permutation_dataset: PermutationPairsDataset, h
                                                             shuffle=False,
                                                             pin_memory=True,
                                                             num_workers=num_workers)
+
+def compute_distance_and_save(permutation_dataset: PermutationPairsDataset, hdfstore: File, corrval_key: str, batch_size: int = 20000, num_workers: int = 8, distance: str = "correlation") -> None:
+    data_loader = torch.utils.data.DataLoader(permutation_dataset,
+                                              batch_size=batch_size,
+                                              shuffle=False,
+                                              pin_memory=True,
+                                              num_workers=num_workers)
+
+    log.info('Computing distances using {}...'.format(distance))
+    completed = False
+    error_idx = (0, 0, 0, 0)
+    while not completed:
+        try:
+            for s1, s2 in tqdm(data_loader):
+                idx1, feat1 = s1
+                idx2, feat2 = s2
+                idx1 = idx1.data.numpy()
+                idx2 = idx2.data.numpy()
+                # feat1 = hdfstore[feature_output_key][idx1, :]
+                # feat2 = hdfstore[feature_output_key][idx2, :]
+                # feat1 = torch.tensor(feat1).cuda()
+                # feat2 = torch.tensor(feat2).cuda()
+
+                # compute correlation
+                if distance == "correlation":
+                    rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
+                elif distance == "l1":
+                    rval = ln_batch(feat1.cuda(), feat2.cuda(), n=1)
+                elif distance == "l2":
+                    rval = ln_batch(feat1.cuda(), feat2.cuda(), n=2)
+                data = hdfstore[corrval_key][idx1.min():idx1.max()+1, :]
+                data[idx1-idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
+                hdfstore[corrval_key][idx1.min():idx1.max()+1, :] = data
+                log.info('Last computed: idx1: {}, idx2: {}'.format(idx1[-1], idx2[-1]))
+            completed = True
+        except Exception as e:
+            log.error(e)
+            log.error(traceback.format_exc())
+            log.info('Last batch computed: ({}, {}) ~ ({}, {})'.format(idx1[0], idx2[0], idx1[-1], idx2[-1]))
+        finally:
+            del data_loader
+            if not completed:
+                if error_idx == (idx1[0], idx2[0], idx1[-1], idx2[-1]):
+                    log.info("repeating the same batch... exiting the program")
+                    break
+                log.info('Restarting data loader from ({}, {})...'.format(idx1[0], idx2[0]))
+                error_idx = (idx1[0], idx2[0], idx1[-1], idx2[-1])
+                idx = idx1[0]*permutation_dataset.datalen + idx2[0]
+                new_dataset = Subset(permutation_dataset, range(idx, len(permutation_dataset)))
+                data_loader = torch.utils.data.DataLoader(new_dataset,
+                                                            batch_size=batch_size,
+                                                            shuffle=False,
+                                                            pin_memory=True,
+                                                            num_workers=num_workers)
+
 
 class ImgCorrelationDataProcessorV2:
 
@@ -193,27 +248,41 @@ class ImgCorrelationDataProcessorV2:
             ax_idx = self.axes_of_interest.index(ax)
             return idx*11*31 + ax_idx*11, idx*11*31 + (ax_idx+1)*11
     
-    def get_top1_cval_other_object(self, cval_matrix_hdf: File, obj: str, ax: str, cval_arr_sameobj: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_top1_cval_other_object(self, cval_matrix_hdf: File, obj: str, ax: str, cval_arr_sameobj: np.ndarray, distance="correlation") -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         c1, c2 = self.get_coord_corrmat(obj, ax=ax)
         cval_mat_np = cp.array(cval_matrix_hdf[c1:c2, :])
         #zero masking the same object
         c3, c4 = self.get_coord_corrmat(obj)
         cval_mat_np[:, c3:c4] = 0
-        #get top1 cval per row
-        top1_cval = cval_mat_np.max(axis=1)
-        top1_idx = cval_mat_np.argmax(axis=1)
-        #get image rank
-        sameobj_imagerank = []
-        for col in cval_arr_sameobj.T:
-            comparison_mask = cp.tile(col, (cval_mat_np.shape[1], 1)).T
-            count_col = (cval_mat_np > comparison_mask).sum(axis=1)
-            count_col = count_col.get()
-            count_col = count_col.astype(np.float)
-            count_col[np.isnan(col)] = np.nan
-            sameobj_imagerank.append(count_col)
+        if distance == "correlation":
+            #get top1 cval per row
+            top1_cval = cval_mat_np.max(axis=1)
+            top1_idx = cval_mat_np.argmax(axis=1)
+            #get image rank
+            sameobj_imagerank = []
+            for col in cval_arr_sameobj.T:
+                comparison_mask = cp.tile(col, (cval_mat_np.shape[1], 1)).T
+                count_col = (cval_mat_np > comparison_mask).sum(axis=1)
+                count_col = count_col.get()
+                count_col = count_col.astype(np.float)
+                count_col[np.isnan(col)] = np.nan
+                sameobj_imagerank.append(count_col)
+        else:
+            #get top1 closest per row
+            top1_cval = cval_mat_np.min(axis=1)
+            top1_idx = cval_mat_np.argmin(axis=1)
+            #get image rank
+            sameobj_imagerank = []
+            for col in cval_arr_sameobj.T:
+                comparison_mask = cp.tile(col, (cval_mat_np.shape[1], 1)).T
+                count_col = (cval_mat_np < comparison_mask).sum(axis=1)
+                count_col = count_col.get()
+                count_col = count_col.astype(np.float)
+                count_col[np.isnan(col)] = np.nan
+                sameobj_imagerank.append(count_col)
         return top1_idx.get(), top1_cval.get(), np.array(sameobj_imagerank).T
     
-    def get_top_per_object(self, cval_matrix_hdf: File, obj: str, ax: str) -> Tuple[np.ndarray, np.ndarray]:
+    def get_top_per_object(self, cval_matrix_hdf: File, obj: str, ax: str, distance: str = "correlation") -> Tuple[np.ndarray, np.ndarray]:
         c1, c2 = self.get_coord_corrmat(obj, ax=ax)
         cval_mat_np = cval_matrix_hdf[c1:c2, :]
         top1_cvals = []
@@ -222,36 +291,47 @@ class ImgCorrelationDataProcessorV2:
             if not o == obj:
                 c3, c4 = self.get_coord_corrmat(o)
                 cval_mat_obj = cval_mat_np[:, c3:c4]
-                top1_cvals.append(cval_mat_obj.max(axis=1))
-                top1_idxs.append(cval_mat_obj.argmax(axis=1))
+                if distance == "correlation":
+                    top1_cvals.append(cval_mat_obj.max(axis=1))
+                    top1_idxs.append(cval_mat_obj.argmax(axis=1))
+                else:
+                    top1_cvals.append(cval_mat_obj.min(axis=1))
+                    top1_idxs.append(cval_mat_obj.argmin(axis=1))
         return np.array(top1_idxs, dtype=np.int64).T, np.array(top1_cvals, dtype=float).T
 
-    def get_top1_sameobj_with_exclusion(self, obj, ax, cval_matrix, pure=False):
+    def get_top1_sameobj_with_exclusion(self, obj, ax, cval_matrix, pure=False, distance: str = "correlation"):
         c1, c2 = self.get_coord_corrmat(obj)
         cval_sameobj = cp.asarray(cval_matrix[c1:c2, c1:c2])
         max_cvals = []
         max_idxs = []
         for xdist in range(0, 11):
             res = self.excluded_to_zero(cval_sameobj, ax, xdist, pure=pure)
-            max_cvals.append(cp.nanmax(res, axis=1))
-            max_idxs.append(cp.nanargmax(res, axis=1))
+            if distance == "correlation":
+                max_cvals.append(cp.nanmax(res, axis=1))
+                max_idxs.append(cp.nanargmax(res, axis=1))
+            else:
+                max_cvals.append(cp.nanmin(res, axis=1))
+                max_idxs.append(cp.nanargmin(res, axis=1))
         max_cvals = cp.array(max_cvals, dtype=float).T
         max_idxs = cp.array(max_idxs, dtype=cp.int64).T
         return max_cvals.get(), max_idxs.get()
     
-    def get_objrank(self, cval_arr_sameobj: np.ndarray, top1_cval_per_obj: np.ndarray) -> np.ndarray:
+    def get_objrank(self, cval_arr_sameobj: np.ndarray, top1_cval_per_obj: np.ndarray, distance: str = "correlation") -> np.ndarray:
         sameobj_objrank = []
         top1_cval_per_obj = cp.array(top1_cval_per_obj)
         for col in cval_arr_sameobj.T:
             comparison_mask = cp.tile(col, (top1_cval_per_obj.shape[1], 1)).T
-            count_col = (top1_cval_per_obj > comparison_mask).sum(axis=1)
+            if distance == "correlation":
+                count_col = (top1_cval_per_obj > comparison_mask).sum(axis=1)
+            else:
+                count_col = (top1_cval_per_obj < comparison_mask).sum(axis=1)
             count_col = count_col.get()
             count_col = count_col.astype(np.float)
             count_col[np.isnan(col)] = np.nan
             sameobj_objrank.append(count_col)
         return np.array(sameobj_objrank).T
     
-    def get_top1_objcat_with_exclusion(self, obj_ref, obj_comp, ax, cval_matrix, pure=False):
+    def get_top1_objcat_with_exclusion(self, obj_ref, obj_comp, ax, cval_matrix, pure=False, distance: str = "correlation"):
         c1, c2 = self.get_coord_corrmat(obj_ref)
         c3, c4 = self.get_coord_corrmat(obj_comp)
         cval_sameobjcat = cp.asarray(cval_matrix[c1:c2, c3:c4])
@@ -259,11 +339,15 @@ class ImgCorrelationDataProcessorV2:
         max_idxs = []
         for xdist in range(0, 11):
             res = self.excluded_to_zero(cval_sameobjcat, ax, xdist, pure=pure)
-            max_cvals.append(cp.nanmax(res, axis=1))
-            max_idxs.append(cp.nanargmax(res, axis=1))
+            if distance == "correlation":
+                max_cvals.append(cp.nanmax(res, axis=1))
+                max_idxs.append(cp.nanargmax(res, axis=1))
+            else:
+                max_cvals.append(cp.nanmin(res, axis=1))
+                max_idxs.append(cp.nanargmin(res, axis=1))
         return np.array(max_cvals, dtype=float).T, np.array(max_idxs, dtype=np.int64).T
     
-    def exclusion_distance_analysis(self, hdfstore: File, contrast_reversed: bool = False, exclusion_mode: str = 'soft', pure: bool = False, num_objs: int = 0) -> None:
+    def exclusion_distance_analysis(self, hdfstore: File, contrast_reversed: bool = False, exclusion_mode: str = 'soft', pure: bool = False, num_objs: int = 0, distance: str = "correlation") -> None:
         if num_objs == 0:
             if contrast_reversed:
                 cval_matrix = hdfstore['/pairwise_correlation/contrast_reversed']
@@ -292,7 +376,7 @@ class ImgCorrelationDataProcessorV2:
                 except ValueError:
                     log.info(obj_ax_key + " already exists")
                 #make same object cval array with exclusion distance in ax
-                cval_arr_sameobj, idx_sameobj =  self.get_top1_sameobj_with_exclusion(obj, ax, cval_matrix, pure=pure)
+                cval_arr_sameobj, idx_sameobj =  self.get_top1_sameobj_with_exclusion(obj, ax, cval_matrix, pure=pure, distance=distance)
                 hdfstore[obj_ax_key+'/top1_cvals'] = cval_arr_sameobj
                 hdfstore[obj_ax_key+'/top1_idx'] = idx_sameobj
                 if not contrast_reversed:
@@ -303,18 +387,18 @@ class ImgCorrelationDataProcessorV2:
                     elif exclusion_mode == 'hard':
                         cval_mat_name = 'cval_orig'
                 #grab top1 for all other objects
-                top1_idx_otherobj, top1_cval_otherobj, sameobj_imagerank = self.get_top1_cval_other_object(locals()[cval_mat_name], obj, ax, cval_arr_sameobj)
+                top1_idx_otherobj, top1_cval_otherobj, sameobj_imagerank = self.get_top1_cval_other_object(locals()[cval_mat_name], obj, ax, cval_arr_sameobj, distance=distance)
                 hdfstore[obj_ax_key+'/top1_cvals_otherobj'] = top1_cval_otherobj
                 hdfstore[obj_ax_key+'/top1_idx_otherobj'] = top1_idx_otherobj
                 #count how many images come before the top1 same object view with exclusion
                 hdfstore[obj_ax_key+'/sameobj_imgrank'] = sameobj_imagerank
 
                 #grab top per object
-                top1_per_obj_idxs, top1_per_obj_cvals = self.get_top_per_object(locals()[cval_mat_name], obj, ax)
+                top1_per_obj_idxs, top1_per_obj_cvals = self.get_top_per_object(locals()[cval_mat_name], obj, ax, distance=distance)
                 hdfstore[obj_ax_key+'/top1_per_obj_cvals'] = top1_per_obj_cvals
                 hdfstore[obj_ax_key+'/top1_per_obj_idxs'] = top1_per_obj_idxs
                 #count how many objects come before the same object view with exclusion
-                sameobj_objrank = self.get_objrank(cval_arr_sameobj, top1_per_obj_cvals)
+                sameobj_objrank = self.get_objrank(cval_arr_sameobj, top1_per_obj_cvals, distance=distance)
                 hdfstore[obj_ax_key+'/sameobj_objrank'] = sameobj_objrank
 
                 #for object category exclusion analysis
@@ -322,6 +406,6 @@ class ImgCorrelationDataProcessorV2:
                 for o in self.objnames:
                     other_obj_cat = o.split('_')[0]
                     if other_obj_cat == obj_cat and o != obj:
-                        cval_arr_sameobjcat, idx_sameobjcat =  self.get_top1_objcat_with_exclusion(obj, o, ax, cval_matrix, pure=pure)
+                        cval_arr_sameobjcat, idx_sameobjcat =  self.get_top1_objcat_with_exclusion(obj, o, ax, cval_matrix, pure=pure, distance=distance)
                         hdfstore[same_obj_cat_key+'/{}/top1_cvals'.format(o)] = cval_arr_sameobjcat
                         hdfstore[same_obj_cat_key+'/{}/top1_idx'.format(o)] = idx_sameobjcat

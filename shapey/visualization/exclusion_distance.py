@@ -6,7 +6,7 @@ import matplotlib.cm as cm
 class NNClassificationErrorV2:
 
     @staticmethod
-    def generate_top1_error_data(hdfstore, objnames, ax, key_head='/original', within_category_error=False):
+    def generate_top1_error_data(hdfstore, objnames, ax, key_head='/original', within_category_error=False, distance: str = "correlation"):
 
         def gather_info_same_obj_cat(hdf_obj_ax, original_obj, objs_same_cat):
             same_objcat_cvals = []
@@ -40,16 +40,27 @@ class NNClassificationErrorV2:
                 #zero out objs in same obj category
                 same_obj_mask = np.tile(in_same_objcat[objnames != obj], (11,1))
                 top_per_obj_cvals[same_obj_mask] = 0
-                #top 1 other object category
-                top1_other_cat_cvals = np.max(top_per_obj_cvals, axis=1)
-                comparison_mask = np.tile(top1_other_cat_cvals, (11,1)).T
-                #top 1 same obj category with exclusion
-                top1_same_cat_cvals = np.max(same_objcat_cvals, axis=0)
-                larger_than = np.greater(top1_same_cat_cvals, comparison_mask)
+                if distance == "correlation":
+                    #top 1 other object category
+                    top1_other_cat_cvals = np.max(top_per_obj_cvals, axis=1)
+                    comparison_mask = np.tile(top1_other_cat_cvals, (11,1)).T
+                    #top 1 same obj category with exclusion
+                    top1_same_cat_cvals = np.max(same_objcat_cvals, axis=0)
+                    larger_than = np.greater(top1_same_cat_cvals, comparison_mask)
+                else:
+                    #top 1 other object category
+                    top1_other_cat_cvals = np.min(top_per_obj_cvals, axis=1)
+                    comparison_mask = np.tile(top1_other_cat_cvals, (11,1)).T
+                    #top 1 same obj category with exclusion
+                    top1_same_cat_cvals = np.min(same_objcat_cvals, axis=0)
+                    larger_than = np.less(top1_same_cat_cvals, comparison_mask)
             else:
                 comparison_mask = np.tile(top1_other, (11, 1)).T
                 # compare if the largest cval for same obj is larger than the top1 cval for other objs
-                larger_than = np.greater(top1_excdist, comparison_mask)
+                if distance == "correlation":
+                    larger_than = np.greater(top1_excdist, comparison_mask)
+                else:
+                    larger_than = np.less(top1_excdist, comparison_mask)
 
             correct = larger_than.sum(axis=0)
             total_sample = 11-np.isnan(top1_excdist).sum(axis=0)
