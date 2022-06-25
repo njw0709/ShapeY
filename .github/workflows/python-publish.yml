@@ -27,10 +27,6 @@ jobs:
     - name: Format code
       run: |
         make format
-    - name: Lint with pylint
-      run: |
-        make lint
     - name: Upload to pypi
       run: |
         make upload
-    
