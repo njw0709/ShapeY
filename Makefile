@@ -9,7 +9,7 @@ lint:
 	pylint --disable=R,C ./shapey/
 
 upload:
-	rm dist/*
+	[ -d "dist/" ] && rm -r dists/*
 	python setup.py sdist
 	twine upload --repository pypi dist/*
 
