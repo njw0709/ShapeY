@@ -54,9 +54,9 @@ class NNClassificationErrorV2:
                 top_per_obj_cvals = g["top1_per_obj_cvals"][:]
                 # zero out objs in same obj category
                 same_obj_mask = np.tile(in_same_objcat[objnames != obj], (11, 1))
-                top_per_obj_cvals[same_obj_mask] = 0
                 if distance == "correlation":
                     # top 1 other object category
+                    top_per_obj_cvals[same_obj_mask] = 0
                     top1_other_cat_cvals = np.max(top_per_obj_cvals, axis=1)
                     comparison_mask = np.tile(top1_other_cat_cvals, (11, 1)).T
                     # top 1 same obj category with exclusion
@@ -64,10 +64,11 @@ class NNClassificationErrorV2:
                     larger_than = np.greater(top1_same_cat_cvals, comparison_mask)
                 else:
                     # top 1 other object category
-                    top1_other_cat_cvals = np.min(top_per_obj_cvals, axis=1)
+                    top_per_obj_cvals[same_obj_mask] = np.nan
+                    top1_other_cat_cvals = np.nanmin(top_per_obj_cvals, axis=1)
                     comparison_mask = np.tile(top1_other_cat_cvals, (11, 1)).T
                     # top 1 same obj category with exclusion
-                    top1_same_cat_cvals = np.min(same_objcat_cvals, axis=0)
+                    top1_same_cat_cvals = np.nanmin(same_objcat_cvals, axis=0)
                     larger_than = np.less(top1_same_cat_cvals, comparison_mask)
             else:
                 comparison_mask = np.tile(top1_other, (11, 1)).T

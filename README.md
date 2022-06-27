@@ -7,7 +7,7 @@ Requirements: Python 3, Cuda version 10.2 (prerequisite for cupy)
 
 To install ShapeY, run the following command:
 ```
-pip3 install shapey==0.1.3
+pip3 install shapey==0.1.5
 ```
 
 ## Step0: Download ShapeY200 dataset
