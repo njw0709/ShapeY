@@ -28,7 +28,7 @@ CLASSIFIERS = [
 # calling the setup function
 setuptools.setup(
     name="ShapeY",
-    version="0.1.0",
+    version="0.1.2",
     description="Benchmark that tests shape recognition",
     long_description=long_description,
     url="https://github.com/njw0709/ShapeY",
