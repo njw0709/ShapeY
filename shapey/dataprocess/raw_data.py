@@ -264,7 +264,7 @@ class ImgCorrelationDataProcessorV2:
             pass
 
     def excluded_to_zero(
-        self, corr_mat_sameobj: cp.ndarray, axis: str, exc_dist: int, pure: bool = True
+        self, corr_mat_sameobj: cp.ndarray, axis: str, exc_dist: int, pure: bool = True, distance: str = "correlation"
     ) -> cp.ndarray:
         # corr_mat_obj has to be a cut-out copy of the original matrix!!!
         # create list with axis of interest in the alphabetical order
@@ -303,6 +303,8 @@ class ImgCorrelationDataProcessorV2:
             repeat_mask = cp.repeat(cp.repeat(repeat_mask, 11, axis=1), 11, axis=0)
             sampling_mask_whole = cp.tile(sampling_mask, (31, 31))
             sampling_mask_whole = cp.multiply(sampling_mask_whole, repeat_mask)
+            if distance != "correlation":
+                sampling_mask_whole[sampling_mask_whole==0] = cp.nan
             # sample from the correlation matrix using the sampling mask
             corr_mat_sameobj = cp.multiply(sampling_mask_whole, corr_mat_sameobj)
             # cut out only the samples where starting image is contained within the transformation series "axis"
@@ -394,7 +396,7 @@ class ImgCorrelationDataProcessorV2:
         max_cvals = []
         max_idxs = []
         for xdist in range(0, 11):
-            res = self.excluded_to_zero(cval_sameobj, ax, xdist, pure=pure)
+            res = self.excluded_to_zero(cval_sameobj, ax, xdist, pure=pure, distance=distance)
             if distance == "correlation":
                 max_cvals.append(cp.nanmax(res, axis=1))
                 max_idxs.append(cp.nanargmax(res, axis=1))
