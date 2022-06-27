@@ -11,7 +11,7 @@ lint:
 upload:
 	if [ -d "dist" ]; then rm -r dist; fi
 	mkdir dist
-	python setup.py sdist bdist_wheel
+	python setup.py sdist
 	twine upload --verbose --repository pypi dist/*
 
 all: install format lint upload
