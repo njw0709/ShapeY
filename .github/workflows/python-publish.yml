@@ -30,6 +30,6 @@ jobs:
     - name: Upload to pypi
       env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         make upload
