@@ -337,7 +337,11 @@ class ImgCorrelationDataProcessorV2:
         cval_mat_np = cp.array(cval_matrix_hdf[c1:c2, :])
         # zero masking the same object
         c3, c4 = self.get_coord_corrmat(obj)
-        cval_mat_np[:, c3:c4] = 0
+        if distance == "correlation":
+            cval_mat_np[:, c3:c4] = 0
+        else:
+            cval_mat_np[:, c3:c4] = np.nan
+            
         if distance == "correlation":
             # get top1 cval per row
             top1_cval = cval_mat_np.max(axis=1)
@@ -353,8 +357,8 @@ class ImgCorrelationDataProcessorV2:
                 sameobj_imagerank.append(count_col)
         else:
             # get top1 closest per row
-            top1_cval = cval_mat_np.min(axis=1)
-            top1_idx = cval_mat_np.argmin(axis=1)
+            top1_cval = cval_mat_np.nanmin(axis=1)
+            top1_idx = cval_mat_np.nanargmin(axis=1)
             # get image rank
             sameobj_imagerank = []
             for col in cval_arr_sameobj.T:
