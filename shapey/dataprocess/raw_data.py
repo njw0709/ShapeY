@@ -446,7 +446,7 @@ class ImgCorrelationDataProcessorV2:
         max_cvals = []
         max_idxs = []
         for xdist in range(0, 11):
-            res = self.excluded_to_zero(cval_sameobjcat, ax, xdist, pure=pure)
+            res = self.excluded_to_zero(cval_sameobjcat, ax, xdist, pure=pure, distance=distance)
             if distance == "correlation":
                 max_cvals.append(cp.nanmax(res, axis=1))
                 max_idxs.append(cp.nanargmax(res, axis=1))
