@@ -1,3 +1,4 @@
+from timeit import repeat
 from tqdm import tqdm
 import numpy as np
 from itertools import combinations
@@ -49,69 +50,53 @@ def extract_features_resnet50(datadir: str) -> Tuple[list, list]:
         original_stored_feat.append(output1_store)
     return original_stored_imgname, original_stored_feat
 
+def batch_compute_distance(feat1: torch.Tensor, feat2: torch.Tensor, distance: str):
+    if distance == "correlation":
+        rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
+    elif distance == "l1":
+        rval = ln_batch(feat1.cuda(), feat2.cuda(), n=1)
+    elif distance == "l2":
+        rval = ln_batch(feat1.cuda(), feat2.cuda(), n=2)
+    return rval
 
-def compute_correlation_and_save(
-    permutation_dataset: PermutationPairsDataset,
-    hdfstore: File,
-    corrval_key: str,
-    batch_size: int = 20000,
-    num_workers: int = 8,
-) -> None:
-    data_loader = torch.utils.data.DataLoader(
-        permutation_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        pin_memory=True,
-        num_workers=num_workers,
-    )
-    log.info("Computing feature correlations...")
-    completed = False
-    while not completed:
-        try:
-            for s1, s2 in tqdm(data_loader):
-                idx1, feat1 = s1
-                idx2, feat2 = s2
-                idx1 = idx1.data.numpy()
-                idx2 = idx2.data.numpy()
-                # feat1 = hdfstore[feature_output_key][idx1, :]
-                # feat2 = hdfstore[feature_output_key][idx2, :]
-                # feat1 = torch.tensor(feat1).cuda()
-                # feat2 = torch.tensor(feat2).cuda()
+def save_corrval_to_hdf(hdfstore, corrval_key, idx1, idx2, rval):
+    data = hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :]
+    data[idx1 - idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
+    hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :] = data
+    return
 
-                # compute correlation
-                rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
-                data = hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :]
-                data[idx1 - idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
-                hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :] = data
-                log.info("Last computed: idx1: {}, idx2: {}".format(idx1[-1], idx2[-1]))
-            completed = True
-        except Exception as e:
-            log.error(e)
-            log.error(traceback.format_exc())
-            log.info(
-                "Last batch computed: ({}, {}) ~ ({}, {})".format(
-                    idx1[0], idx2[0], idx1[-1], idx2[-1]
-                )
-            )
-        finally:
-            del data_loader
+def complete_run_except_stuck(compute_distance_function):
+    def wrapper_complete_run_except_stuck(*args, **kwargs):
+        error_idx = (0, 0, 0, 0) #tracks the last computed index
+        repeat_count = 0
+        completed = False
+        while not completed:
+            completed, idx1, idx2 = compute_distance_function(*args, **kwargs)
+            error_idx_current = (idx1[0], idx2[0], idx1[-1], idx2[-1])
+            
             if not completed:
+                #check if stuck
+                if error_idx == error_idx_current:
+                    repeat_count += 1
+                else:
+                    repeat_count = 0
+                
+                if repeat_count > 100:
+                    log.error("repeating the same batch over and over...")
+                    log.info("exiting...")
+                    raise RuntimeError('Correlation computing stuck at idx={},{}'.format(idx1[0], idx2[0]))
+                
                 log.info(
                     "Restarting data loader from ({}, {})...".format(idx1[0], idx2[0])
                 )
+
+                permutation_dataset = args[0]
                 idx = idx1[0] * permutation_dataset.datalen + idx2[0]
-                new_dataset = Subset(
+                args[0] = Subset(
                     permutation_dataset, range(idx, len(permutation_dataset))
                 )
-                data_loader = torch.utils.data.DataLoader(
-                    new_dataset,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    pin_memory=True,
-                    num_workers=num_workers,
-                )
 
-
+@complete_run_except_stuck
 def compute_distance_and_save(
     permutation_dataset: PermutationPairsDataset,
     hdfstore: File,
@@ -119,7 +104,7 @@ def compute_distance_and_save(
     batch_size: int = 20000,
     num_workers: int = 8,
     distance: str = "correlation",
-) -> None:
+) -> Tuple[bool, np.ndarray, np.ndarray]:
     data_loader = torch.utils.data.DataLoader(
         permutation_dataset,
         batch_size=batch_size,
@@ -130,66 +115,31 @@ def compute_distance_and_save(
 
     log.info("Computing distances using {}...".format(distance))
     completed = False
-    error_idx = (0, 0, 0, 0)
-    repeat_count = 0
-    while not completed:
-        try:
-            for s1, s2 in tqdm(data_loader):
-                idx1, feat1 = s1
-                idx2, feat2 = s2
-                idx1 = idx1.data.numpy()
-                idx2 = idx2.data.numpy()
-                # feat1 = hdfstore[feature_output_key][idx1, :]
-                # feat2 = hdfstore[feature_output_key][idx2, :]
-                # feat1 = torch.tensor(feat1).cuda()
-                # feat2 = torch.tensor(feat2).cuda()
+    
+    try:
+        for s1, s2 in tqdm(data_loader):
+            idx1, feat1 = s1
+            idx2, feat2 = s2
+            idx1 = idx1.data.numpy()
+            idx2 = idx2.data.numpy()
 
-                # compute correlation
-                if distance == "correlation":
-                    rval = pearsonr_batch(feat1.cuda(), feat2.cuda())
-                elif distance == "l1":
-                    rval = ln_batch(feat1.cuda(), feat2.cuda(), n=1)
-                elif distance == "l2":
-                    rval = ln_batch(feat1.cuda(), feat2.cuda(), n=2)
-                data = hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :]
-                data[idx1 - idx1.min(), idx2] = rval.cpu().data.numpy().flatten()
-                hdfstore[corrval_key][idx1.min() : idx1.max() + 1, :] = data
-                log.info("Last computed: idx1: {}, idx2: {}".format(idx1[-1], idx2[-1]))
-            completed = True
-        except Exception as e:
-            log.error(e)
-            log.error(traceback.format_exc())
-            log.info(
-                "Last batch computed: ({}, {}) ~ ({}, {})".format(
-                    idx1[0], idx2[0], idx1[-1], idx2[-1]
-                )
+            # compute distance
+            rval = batch_compute_distance(feat1, feat2, distance)
+            save_corrval_to_hdf(hdfstore, corrval_key, idx1, idx2, rval)
+            log.info("Last computed: idx1: {}, idx2: {}".format(idx1[-1], idx2[-1]))
+        completed = True
+
+    except Exception as e:
+        log.error(e)
+        log.error(traceback.format_exc())
+        log.info(
+            "Last batch computed: ({}, {}) ~ ({}, {})".format(
+                idx1[0], idx2[0], idx1[-1], idx2[-1]
             )
-            if error_idx == (idx1[0], idx2[0], idx1[-1], idx2[-1]):
-                log.info("repeating the same batch...")
-                repeat_count += 1
-
-        finally:
-            del data_loader
-            if not completed:
-                if repeat_count > 1000:
-                    log.error("repeating the same batch over and over...")
-                    log.info("exiting...")
-                    break
-                log.info(
-                    "Restarting data loader from ({}, {})...".format(idx1[0], idx2[0])
-                )
-                error_idx = (idx1[0], idx2[0], idx1[-1], idx2[-1])
-                idx = idx1[0] * permutation_dataset.datalen + idx2[0]
-                new_dataset = Subset(
-                    permutation_dataset, range(idx, len(permutation_dataset))
-                )
-                data_loader = torch.utils.data.DataLoader(
-                    new_dataset,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    pin_memory=True,
-                    num_workers=num_workers,
-                )
+        )
+    finally:
+        del data_loader
+        return completed, idx1, idx2
 
 
 class ImgCorrelationDataProcessorV2:
