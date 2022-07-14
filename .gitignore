@@ -6,6 +6,7 @@ figures/
 notebooks/
 outputs/
 multirun/
+tests/test_data
 
 #vscode
 .vscode/

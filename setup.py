@@ -26,6 +26,7 @@ CLASSIFIERS = [
 ]
 
 # calling the setup function
+# TODO: separate dev / test / deploy setup with options
 setuptools.setup(
     name="ShapeY",
     version="0.1.7",
