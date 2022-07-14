@@ -50,8 +50,7 @@ def compute_feature_correlation(args: ShapeYConfig) -> bool:
         except ValueError:
             log.info(corrval_key_original + " already exists")
 
-        compute_distance_and_save(permutation_dataset, hdfstore, corrval_key_original, batch_size=args.network.batch_size, num_workers=args.network.num_workers, distance=args.distance.metric)
-        completed = True
+        completed, _, _ = compute_distance_and_save(permutation_dataset, hdfstore, corrval_key_original, batch_size=args.network.batch_size, num_workers=args.network.num_workers, distance=args.distance.metric)
     except Exception as e:
         log.error(e)
         log.error(traceback.format_exc())

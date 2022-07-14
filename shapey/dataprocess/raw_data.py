@@ -95,6 +95,8 @@ def complete_run_except_stuck(compute_distance_function):
                 args[0] = Subset(
                     permutation_dataset, range(idx, len(permutation_dataset))
                 )
+            return completed, idx1, idx2
+    return wrapper_complete_run_except_stuck
 
 @complete_run_except_stuck
 def compute_distance_and_save(

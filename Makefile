@@ -14,4 +14,7 @@ upload:
 	python setup.py sdist
 	twine upload --verbose --repository-url https://upload.pypi.org/legacy/ dist/*
 
+test:
+	python -m pytest -vs tests
+
 all: install format lint upload
