@@ -48,6 +48,9 @@ def test_complete_run_compute_distance_and_save(
     assert idx2.max() == num_features - 1
 
 
+<<<<<<< HEAD
 #TODO: implement testing for handling repeating batch error
 def test_repeating_correlation_batch():
     assert 1
+=======
+>>>>>>> ec691c8ffc73f95ac104a9b22aea431869f6a569
