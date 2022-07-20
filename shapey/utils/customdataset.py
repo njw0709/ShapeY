@@ -3,7 +3,8 @@ from torch.utils.data import Dataset
 from itertools import combinations
 import math
 import psutil
-
+import numpy as np
+from typing import List
 
 class CombinationDataset(Dataset):
     def __init__(self, dataset):
@@ -97,6 +98,50 @@ class PermutationPairsDataset(Dataset):
     def __len__(self):
         return len(self.original) ** 2
 
+class PermutationDatasetWithNNBatches(PermutationPairsDataset):
+    def __init__(self, original_feat_dataset, batch_idxs: List[np.ndarray], postprocessed=None, ):
+        super().__init__(original_feat_dataset, postprocessed)
+        self.batch_idxs = batch_idxs
+        self.batch_dims = [b.size for b in self.batch_idxs]
+        if len(set(self.batch_dims[:-1])) == 1:
+            self.same_batch_size = True
+        else:
+            self.same_batch_size = False
+        batch_lengths = np.array([dim**2 for dim in self.batch_dims])
+        self.batch_index_cutoff = np.cumsum(batch_lengths)
+
+    def __getitem__(self, index):
+        # compute which batch you are in
+        if self.same_batch_size:
+            batch_id = int(index/(self.batch_dims[0])**2)
+            within_batch_idx = index - batch_id*(self.batch_dims[0]**2)
+        else:
+            batch_id = self.get_batch_num(index)
+            within_batch_idx = index - self.batch_index_cutoff[batch_id - 1]
+        
+        bidx1 = int(within_batch_idx/self.batch_dims[batch_id])
+        bidx2 = within_batch_idx % self.batch_dims[batch_id]
+        imgidx1 = self.batch_idxs[batch_id][bidx1]
+        imgidx2 = self.batch_idxs[batch_id][bidx2]
+        s1 = self.original[imgidx1]
+        if self.postprocessed is not None:
+            s2 = self.postprocessed[imgidx2]
+        else:
+            s2 = self.original[imgidx2]
+        return (imgidx1, s1), (imgidx2, s2)
+    
+    def __len__(self):
+        return self.batch_index_cutoff[-1]
+        
+    def get_batch_num(self, index):
+        batch_id = 0
+        for l in self.batch_lengths:
+            index -= l
+            if index < 0:
+                return batch_id
+            else:
+                batch_id +=1
+    
 
 class HDFDataset(Dataset):
     def __init__(self, hdfstore, mem_usage=0.85):
