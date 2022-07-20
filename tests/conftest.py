@@ -29,7 +29,16 @@ DATA_DIR = os.path.join(FIXTURE_DIR, 'test_data')
 #     os.remove(tmp_file_path)
 
 @pytest.fixture(scope="session")
-def h5_feats_small_fake():
+def fake_imgnames():
+    # create fake image names and their vectors
+    objnames = ['coffee', 'icecream', 'jam', 'hairdryer', 'microwave']
+    axes = ImgCorrelationDataProcessorV2.generate_axes_of_interest()
+    series = ['{}{}'.format(ax, '{:02d}'.format(num)) for num in range(0,11) for ax in axes]
+    original_stored_imgname = ['{}-{}.png'.format(obj, ser) for obj in objnames for ser in series]
+    return original_stored_imgname
+
+@pytest.fixture(scope="session")
+def h5_feats_small_fake(fake_imgnames):
     # create a fake dataset
     tmp_file_path = os.path.join(DATA_DIR, 'tmp', 'small_fake.h5')
     hdfstore = h5py.File(tmp_file_path, 'w')
@@ -38,11 +47,7 @@ def h5_feats_small_fake():
     feature_output_key = feature_group_key + '/output'
     imgname_key = feature_group_key + '/imgname'
 
-    # create fake image names and their vectors
-    objnames = ['coffee', 'icecream', 'jam', 'hairdryer', 'microwave']
-    axes = ImgCorrelationDataProcessorV2.generate_axes_of_interest()
-    series = ['{}{}'.format(ax, '{:02d}'.format(num)) for num in range(0,11) for ax in axes]
-    original_stored_imgname = ['{}-{}.png'.format(obj, ser) for obj in objnames for ser in series]
+    original_stored_imgname = fake_imgnames
     original_stored_feat = np.random.rand(len(original_stored_imgname), 100)
 
     hdfstore.create_dataset(imgname_key, data=np.array(original_stored_imgname).astype('S'))
