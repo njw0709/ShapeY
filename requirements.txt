@@ -12,3 +12,4 @@ twine
 black
 pylint
 pytest
+dvc
