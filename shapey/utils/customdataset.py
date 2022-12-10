@@ -98,6 +98,28 @@ class PermutationPairsDataset(Dataset):
     def __len__(self):
         return len(self.original) ** 2
 
+class PermutationPairsSameObj(PermutationPairsDataset):
+    def __init__(self, original_feat_dataset, numviews_sameobj=341,postprocessed=None):
+        super().__init__(original_feat_dataset, postprocessed)
+        self.datalen = len(self.original)
+        self.numviews_sameobj = numviews_sameobj
+    
+    def __getitem__(self, index):
+        objidx = index // self.numviews_sameobj**2
+        viewidx = index % self.numviews_sameobj**2
+        idx1 = self.numviews_sameobj*objidx + viewidx//self.numviews_sameobj
+        idx2 = self.numviews_sameobj*objidx + viewidx%self.numviews_sameobj
+        s1 = self.original[idx1]
+        if self.postprocessed is not None:
+            s2 = self.postprocessed[idx2]
+        else:
+            s2 = self.original[idx2]
+        return (idx1, s1), (idx2, s2)
+    
+    def __len__(self):
+        numobj = self.datalen // self.numviews_sameobj
+        return numobj * self.numviews_sameobj**2
+
 class PermutationDatasetWithNNBatches(PermutationPairsDataset):
     def __init__(self, original_feat_dataset, batch_idxs: List[np.ndarray], postprocessed=None, ):
         super().__init__(original_feat_dataset, postprocessed)
