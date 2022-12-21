@@ -33,3 +33,8 @@ def ln_batch(x_batch, y_batch, n=1):
     lndist = nn.PairwiseDistance(p=n, keepdim=True)
     d = lndist(x_batch, y_batch)
     return d
+
+
+def ln_cdist(x_batch, y_batch, n=1):
+    d_mat = torch.cdist(x_batch, y_batch, p=n)
+    return d_mat
