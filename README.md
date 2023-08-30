@@ -3,11 +3,11 @@
 ShapeY is a benchmark that tests a vision system's shape recognition capacity. ShapeY currently consists of ~68k images of 200 3D objects taken from ShapeNet. Note that this benchmark is not meant to be used as a training dataset, but rather serves to validate that the visual object recogntion / classification under inspection has developed a capacity to perform well on our benchmarking tasks, which are designed to be hard if the system does not understand shape.
 
 ## Installing ShapeY
-Requirements: Python 3, Cuda version 10.2 (prerequisite for cupy)
+Requirements: Python 3.9, Cuda version 10.2 (prerequisite for cupy)
 
 To install ShapeY, run the following command:
 ```
-pip3 install shapey==0.1.7
+pip install ShapeYModular==2.0.0
 ```
 
 ## Step0: Download ShapeY200 dataset
