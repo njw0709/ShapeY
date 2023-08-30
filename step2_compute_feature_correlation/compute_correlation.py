@@ -61,6 +61,6 @@ def compute_feature_correlation(args: ShapeYConfig) -> bool:
 
 if __name__ == '__main__':
     with initialize(config_path="../conf", job_name="step2_compute_correlation"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY"])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/user/ShapeY"])
         compute_feature_correlation(cfg)
 

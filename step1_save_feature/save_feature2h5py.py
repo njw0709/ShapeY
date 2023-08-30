@@ -82,7 +82,7 @@ def save_feature(args: ShapeYConfig) -> bool:
 
 if __name__ == '__main__':
      with initialize(config_path="../conf", job_name="step1_save_feature"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY"])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/user/ShapeY"])
         save_feature(cfg)
 
    

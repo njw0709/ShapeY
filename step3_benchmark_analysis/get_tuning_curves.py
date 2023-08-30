@@ -22,5 +22,5 @@ def get_tuning_curve(args: ShapeYConfig) -> None:
 
 if __name__ == '__main__':
      with initialize(config_path="../conf", job_name="step3_analysis_tuning_curve"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY"])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/user/ShapeY"])
         get_tuning_curve(cfg)

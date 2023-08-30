@@ -67,5 +67,5 @@ def graph_exclusion_top1(args: ShapeYConfig) -> bool:
 
 if __name__ == '__main__':
     with initialize(config_path="../conf", job_name="step4_graph_exclusion_top1"):
-        cfg = compose(config_name="config", overrides=["data.project_dir=/home/namj/ShapeY", 'network=resnet50_random', 'data=ShapeY200', 'graph=cat'])
+        cfg = compose(config_name="config", overrides=["data.project_dir=/home/user/ShapeY", 'network=resnet50_random', 'data=ShapeY200', 'graph=cat'])
         graph_exclusion_top1(cfg)
